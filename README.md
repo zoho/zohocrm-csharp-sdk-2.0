@@ -81,7 +81,7 @@ You can include the SDK to your project using:
         </ItemGroup>
         ```
 
-        - A sample **.csproj** file
+        - A sample **.config** file
 
         ![csproj](csproj.png)
 
