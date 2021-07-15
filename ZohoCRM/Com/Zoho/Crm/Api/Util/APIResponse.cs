@@ -18,6 +18,8 @@ namespace Com.Zoho.Crm.API.Util
 
         private bool isExpected;
 
+        private string statusDescription;
+
         /// <summary>
         /// Creates an APIResponse&lt;T&gt; class instance with the specified parameters.
         /// </summary>
@@ -25,7 +27,7 @@ namespace Com.Zoho.Crm.API.Util
         /// <param name="statusCode">A int containing the API response HTTP status code.</param>
         /// <param name="Object">A object containing the API response POJO class instance.</param>
         /// <param name="exe">A bool containing the API response instance expected type or not.</param>
-        public APIResponse(Dictionary<string, string> headers, int statusCode, Model Object,bool exe)
+        public APIResponse(Dictionary<string, string> headers, int statusCode, Model Object, bool expectedType, string statusDescription)
         {
             this.headers = headers;
 
@@ -33,7 +35,9 @@ namespace Com.Zoho.Crm.API.Util
 
             this.@object = Object;
 
-            this.isExpected = exe;
+            this.isExpected = expectedType;
+
+            this.statusDescription = statusDescription;
         }
 
         /// <summary>
@@ -106,6 +110,18 @@ namespace Com.Zoho.Crm.API.Util
                 {
                     return default(T);
                 }
+            }
+        }
+
+        /// <summary>
+        /// This is a getter method to get the API response HTTP status description.
+        /// </summary>
+        /// <returns>A int representing the API response HTTP status description.</returns>
+        public string StatusDescription
+        {
+            get
+            {
+                return this.statusDescription;
             }
         }
     }

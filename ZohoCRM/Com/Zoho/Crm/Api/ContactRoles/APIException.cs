@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace Com.Zoho.Crm.API.ContactRoles
 {
 
-	public class APIException : Model, ResponseHandler, ActionResponse, ActionHandler
+	public class APIException : Model, ResponseHandler, ActionResponse, ActionHandler, RecordResponseHandler, RecordActionHandler
 	{
 		private Choice<string> status;
 		private Choice<string> code;

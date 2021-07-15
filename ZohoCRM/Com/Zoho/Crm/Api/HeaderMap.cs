@@ -48,7 +48,7 @@ namespace Com.Zoho.Crm.API
             {
                 throw new SDKException(Constants.HEADER_NAME_NULL_ERROR, Constants.HEADER_NAME_NULL_ERROR_MESSAGE);
             }
-            
+
             if(value == null)
             {
                 throw new SDKException(Constants.HEADER_NULL_ERROR, headerName + Constants.NULL_VALUE_ERROR_MESSAGE);
@@ -57,7 +57,7 @@ namespace Com.Zoho.Crm.API
             string headerValue = null;
 
             string type = value.GetType().FullName;
-            
+
             try
             {
                 Type dataTypeConverter = Type.GetType(Constants.DATATYPECONVERTER.Replace(Constants._TYPE, type));
@@ -65,13 +65,13 @@ namespace Com.Zoho.Crm.API
                 MethodInfo method = dataTypeConverter.GetMethod(Constants.POST_CONVERT);
 
                 headerValue = (string)(method.Invoke(null, new object[] { value, type }));
-            
+
             }
-            catch (Exception) 
+            catch (Exception)
             {
                 headerValue = value.ToString();
             }
-            
+
             if (headerMap.ContainsKey(headerName) && ! string.IsNullOrEmpty(headerMap[headerName]))
             {
                 string existingHeaderValue = this.headerMap[headerName];

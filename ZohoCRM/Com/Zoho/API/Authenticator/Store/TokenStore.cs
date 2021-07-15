@@ -35,11 +35,20 @@ namespace Com.Zoho.API.Authenticator.Store
         /// <summary>
         /// The method to retrieve all the stored tokens.
         /// </summary>
-        public List<Token> GetTokens();
+        List<Token> GetTokens();
 
         /// <summary>
         /// The method to delete all the stored tokens.
         /// </summary>
-        public void DeleteTokens();
+        void DeleteTokens();
+
+        /// <summary>
+        /// This method is used to retrieve the user token details based on unique ID
+        /// </summary>
+        /// <param name="id">A String representing the unique ID</param>
+        /// <param name="token">A Token class instance representing the user token details.</param>
+        /// <returns>A Token class instance representing the user token details.</returns>
+        ///
+        Token GetTokenById(string id, Token token);
     }
 }

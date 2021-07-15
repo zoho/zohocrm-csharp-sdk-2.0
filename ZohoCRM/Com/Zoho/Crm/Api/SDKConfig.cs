@@ -23,7 +23,7 @@ namespace Com.Zoho.Crm.API
 			/// </summary>
 			/// <param name="autoRefreshFields">A boolean</param>
 			/// <returns>An instance of Builder</returns>
-			public Builder SetAutoRefreshFields(bool autoRefreshFields)
+			public Builder AutoRefreshFields(bool autoRefreshFields)
 			{
 				this.autoRefreshFields = autoRefreshFields;
 
@@ -35,7 +35,7 @@ namespace Com.Zoho.Crm.API
 			/// </summary>
 			/// <param name="pickListValidation">A boolean</param>
 			/// <returns>An instance of Builder</returns>
-			public Builder SetPickListValidation(bool pickListValidation)
+			public Builder PickListValidation(bool pickListValidation)
 			{
 				this.pickListValidation = pickListValidation;
 
@@ -60,7 +60,7 @@ namespace Com.Zoho.Crm.API
 			/// <returns>An instance of SDKConfig</returns>
 			public SDKConfig Build()
 			{
-				return new SDKConfig(autoRefreshFields, pickListValidation, timeout);
+				return new SDKConfig(this.autoRefreshFields, this.pickListValidation, this.timeout);
 			}
 		}
 
@@ -75,7 +75,7 @@ namespace Com.Zoho.Crm.API
 		/// </summary>
 		/// <param name="autoRefreshFields">A boolean representing autoRefreshFields</param>
 		/// <param name="pickListValidation">A boolean representing pickListValidation</param>
-		/// <param name="timeout">A int representing timeout</param>
+		/// <param name="timeout">An integer representing request timeout</param>
 		private SDKConfig(bool autoRefreshFields, bool pickListValidation, int timeout)
 		{
 			this.autoRefreshFields = autoRefreshFields;
@@ -114,11 +114,11 @@ namespace Com.Zoho.Crm.API
 		/// </summary>
 		/// <returns>A int representing timeout</returns>
 		public int Timeout
-		{
+        {
 			get
-			{
+            {
 				return timeout;
-			}
-		}
+            }
+        }
 	}
 }

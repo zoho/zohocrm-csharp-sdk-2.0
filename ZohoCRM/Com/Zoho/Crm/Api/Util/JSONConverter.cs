@@ -63,7 +63,7 @@ namespace Com.Zoho.Crm.API.Util
 
                 foreach (object className in classes)
                 {
-                    if (((string)className).Equals(requestObjectClassName, StringComparison.OrdinalIgnoreCase))
+                    if (Convert.ToString(className).Equals(requestObjectClassName, StringComparison.OrdinalIgnoreCase))
                     {
                         classDetail = (JObject)Initializer.jsonDetails.GetValue(requestObjectClassName);
 
@@ -187,7 +187,14 @@ namespace Com.Zoho.Crm.API.Util
 
                         if (requestInstance is FileDetails)
                         {
-                            requestJSON.Add(keyName.ToLower(), fieldValue != null ? JToken.FromObject(fieldValue) : JValue.CreateNull());
+                            if(fieldValue == null || (fieldValue is string && fieldValue.ToString().ToLower().Equals("null")))
+                            {
+                                requestJSON.Add(keyName.ToLower(), JValue.CreateNull());
+                            }
+                            else
+                            {
+                                requestJSON.Add(keyName.ToLower(), JToken.FromObject(fieldValue));
+                            }
                         }
                         else
                         {
@@ -539,7 +546,7 @@ namespace Com.Zoho.Crm.API.Util
                     foreach (var key in requestObject.Keys)
                     {
                         object data = RedirectorForObjectToJSON(requestObject[key]);
-                        
+
                         jsonObject.Add((string)key, data != null ? JToken.FromObject(data) : JValue.CreateNull());
                     }
                 }
@@ -739,7 +746,7 @@ namespace Com.Zoho.Crm.API.Util
 
                     FieldInfo field = GetPrivateFieldInfo(instance.GetType(), memberName);
 
-                    object memberValue = GetData(keyData, keyDetail);
+                    object memberValue = GetData(keyData, keyDetail, field);
 
                     field.SetValue(instance, memberValue);
                 }
@@ -828,8 +835,8 @@ namespace Com.Zoho.Crm.API.Util
                 if (keyDetail.Count > 0)
                 {
                     keyName = (string)keyDetail[Constants.NAME];
-                    
-                    keyValue = GetData(keyData, keyDetail);
+
+                    keyValue = GetData(keyData, keyDetail, field);
                 }
                 else// if not key detail
                 {
@@ -844,7 +851,7 @@ namespace Com.Zoho.Crm.API.Util
             return recordInstance;
         }
 
-        private object GetData(object keyData, JObject memberDetail)
+        private object GetData(object keyData, JObject memberDetail, FieldInfo field)
         {
             object memberValue = null;
 
@@ -867,11 +874,20 @@ namespace Com.Zoho.Crm.API.Util
                 }
                 else if (type.Equals(Constants.CHOICE_NAMESPACE) || (memberDetail.ContainsKey(Constants.STRUCTURE_NAME) && ((string)memberDetail[Constants.STRUCTURE_NAME]).Equals(Constants.CHOICE_NAMESPACE)))
                 {
-                    string valueType = ((JValue)keyData).Value.GetType().FullName;
+                    if(field != null && field.FieldType.FullName.Contains(Constants.CSHARP_NULL_TYPE_NAME))
+                    {
+                        Type t = Type.GetType(CSharpName(field.FieldType));
 
-                    Type t = Type.GetType(Constants.CHOICE.Replace(Constants._TYPE, valueType));
+                        memberValue = Activator.CreateInstance(field.FieldType, ChangeType(((JValue)keyData).Value, t));
+                    }
+                    else
+                    {
+                        string valueType = ((JValue)keyData).Value.GetType().FullName;
 
-                    memberValue = Activator.CreateInstance(t, ((JValue)keyData).Value);
+                        Type t = Type.GetType(Constants.CHOICE.Replace(Constants._TYPE, valueType));
+
+                        memberValue = Activator.CreateInstance(t, ((JValue)keyData).Value);
+                    }
                 }
                 else if (memberDetail.ContainsKey(Constants.STRUCTURE_NAME) && memberDetail.ContainsKey(Constants.MODULE))
                 {
@@ -892,6 +908,51 @@ namespace Com.Zoho.Crm.API.Util
             }
 
             return memberValue;
+        }
+
+
+        public static object ChangeType(object value, Type conversion)
+        {
+            var t = conversion;
+
+            if (t.IsGenericType && t.GetGenericTypeDefinition().Equals(typeof(Nullable<>)))
+            {
+                if (value == null)
+                {
+                    return null;
+                }
+
+                t = Nullable.GetUnderlyingType(t);
+            }
+
+            return Convert.ChangeType(value, t);
+        }
+
+
+        public static string CSharpName(Type type)
+        {
+            var sb = new StringBuilder();
+
+            var name = type.Name;
+
+            if (!type.IsGenericType) return name;
+
+            foreach(Type genericArgument in type.GenericTypeArguments)
+            {
+                var sb1 = new StringBuilder();
+
+                sb1.Append(genericArgument.Namespace).Append(".").Append(genericArgument.Name);
+
+                if (sb1.ToString().Equals(Constants.CSHARP_NULL_TYPE_NAME, StringComparison.OrdinalIgnoreCase))
+                {
+                    foreach (Type genericArgument1 in genericArgument.GenericTypeArguments)
+                    {
+                        sb.Append(genericArgument1.Namespace).Append(".").Append(genericArgument1.Name);
+                    }
+                }
+            }
+
+            return sb.ToString();
         }
 
         private object GetMapData(JObject response, JObject memberDetail)
@@ -923,7 +984,7 @@ namespace Com.Zoho.Crm.API.Util
 
                             if (response.ContainsKey(keyName) && response[keyName] != null)
                             {
-                                keyValue = GetData(response[keyName], keyDetail);
+                                keyValue = GetData(response[keyName], keyDetail, null);
 
                                 mapInstance.Add(keyName, keyValue);
                             }
@@ -1022,7 +1083,7 @@ namespace Com.Zoho.Crm.API.Util
                             type1 = GetType(tokenType);
                         }
                     }
-                    
+
                     listTypeName = memberDetail[Constants.TYPE] + "[" + type1 + "]";
                 }
 
@@ -1085,9 +1146,7 @@ namespace Com.Zoho.Crm.API.Util
 
             string recordFieldDetailsPath = Initializer.GetInitializer().ResourcePath + Path.DirectorySeparatorChar + Constants.FIELD_DETAILS_DIRECTORY + Path.DirectorySeparatorChar + GetEncodedFileName();
 
-            moduleDetail = Utility.GetJSONObject(Initializer.GetJSON((recordFieldDetailsPath)), module);
-
-            return moduleDetail;
+            return Utility.GetJSONObject(Initializer.GetJSON((recordFieldDetailsPath)), module);
         }
 
         private object RedirectorForJSONToObject(object keyData)
@@ -1213,7 +1272,7 @@ namespace Com.Zoho.Crm.API.Util
 
         public static string BuildName(string memberName)
         {
-            List<string> name = memberName.Split('_').ToList();
+            List<string> name = memberName.ToLower().Split('_').ToList();
 
             string sdkName = "";
 

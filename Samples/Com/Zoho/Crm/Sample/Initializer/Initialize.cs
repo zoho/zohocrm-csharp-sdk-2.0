@@ -1,19 +1,11 @@
 ﻿using System;
-
 using Com.Zoho.API.Authenticator;
-
 using Com.Zoho.API.Authenticator.Store;
-
 using Com.Zoho.Crm.API;
-
 using Com.Zoho.Crm.API.Dc;
-
 using Com.Zoho.Crm.API.Logger;
-
 using static Com.Zoho.API.Authenticator.OAuthToken;
-
 using Environment = Com.Zoho.Crm.API.Dc.DataCenter.Environment;
-
 using SDKInitializer = Com.Zoho.Crm.API.Initializer;
 
 namespace Com.Zoho.Crm.Sample.Initializer
@@ -23,12 +15,15 @@ namespace Com.Zoho.Crm.Sample.Initializer
 		public static void SDKInitialize()
 		{
 			/*
-			 * Create an instance of Logger Class that takes two parameters
-			 * 1 -> Level of the log messages to be logged. Can be configured by typing Levels "." and choose any level from the list displayed.
-			 * 2 -> Absolute file path, where messages need to be logged.
-			 */
-			Logger logger = Logger.GetInstance(Logger.Levels.ALL, "/Users/Documents/GitLab/csharp_sdk_log.log");
-		
+            * Create an instance of Logger Class that requires the following
+            * Level -> Level of the log messages to be logged. Can be configured by typing Levels "." and choose any level from the list displayed.
+            * FilePath -> Absolute file path, where messages need to be logged.
+            */
+			Logger logger = new Logger.Builder()
+			.Level(Logger.Levels.ALL)
+			.FilePath("/Users/Documents/GitLab/csharp_sdk_log.log")
+			.Build();
+			
 		    //Create an UserSignature instance that takes user Email as parameter
 		    UserSignature user = new UserSignature("abc@zoho.com");
 
@@ -41,32 +36,40 @@ namespace Com.Zoho.Crm.Sample.Initializer
 			Environment environment = USDataCenter.PRODUCTION;
 
 			/*
-		     * Create a Token instance
-		     * 1 -> OAuth client id.
-		     * 2 -> OAuth client secret.
-		     * 3 -> OAuth redirect URL.
-		     * 4 -> REFRESH/GRANT token.
-		     * 5 -> token type.
-		     */
-			//Token token = new OAuthToken("1000.xxxxx", "xxxxxx", "1000.xxxxxx.xxxxxx", TokenType.REFRESH, "https://www.zoho.com");
+            * Create a Token instance
+            * ClientId -> OAuth client id.
+            * ClientSecret -> OAuth client secret.
+            * RefreshToken -> Refresh token.
+            * RedirectURL -> OAuth redirect URL.
+            */
+			Token token = new OAuthToken.Builder()
+			.ClientId("ClientId")
+			.ClientSecret("ClientSecret")
+			.RefreshToken("RefreshToken")
+			//.RedirectURL("redirectURL")
+			.Build();
 
-			//Token token = new OAuthToken("1000.xxxx", "xxxxxx", "1000.xxxxxx.xxxxxx", TokenType.GRANT, "https://www.zoho.com");
+			/*
+            * Create an instance of DBStore.
+            * Host -> DataBase host name. Default "localhost"
+            * DatabaseName -> DataBase name. Default "zohooauth"
+            * UserName -> DataBase user name. Default "root"
+            * Password -> DataBase password. Default ""
+            * PortNumber -> DataBase port number. Default "3306"
+            * TableName -> Table Name. Default value "oauthtoken"
+            */
+			//TokenStore tokenstore = new DBStore.Builder().Build();
 
-			Token token = new OAuthToken("1000.xxxxxx", "xxxxxx", "1000.xxxxxx.xxxxxx", TokenType.GRANT, "https://www.zoho.com");
+			//TokenStore tokenstore = new DBStore.Builder()
+			//.Host("hostName")
+			//.DatabaseName("dataBaseName")
+			//.TableName("TableName")
+			//.UserName("userName")
+			//.Password("Password")
+			//.PortNumber("portNumber")
+			//.Build();
 
-            /*
-		     * Create an instance of TokenStore.
-		     * 1 -> DataBase host name. Default "jdbc:mysql://localhost"
-		     * 2 -> DataBase name. Default "zohooauth"
-		     * 3 -> DataBase user name. Default "root"
-		     * 4 -> DataBase password. Default ""
-		     * 5 -> DataBase port number. Default "3306"
-		     */
-            //TokenStore tokenstore = new DBStore();
-
-            TokenStore tokenstore = new DBStore(null, null, null, null, null);
-
-			//TokenStore tokenstore = new FileStore("/Users/Documents/GitLab/csharp_sdk_token.txt");
+			TokenStore tokenstore = new FileStore("/Users/Documents/GitLab/csharp_sdk_token.txt");
 
 			/*
             * autoRefreshFields
@@ -77,56 +80,72 @@ namespace Com.Zoho.Crm.Sample.Initializer
             * if true - value for any picklist field will be validated with the available values.
             * if false - value for any picklist field will not be validated, resulting in creation of a new value.
             */
-			SDKConfig config = new SDKConfig.Builder().SetAutoRefreshFields(true).SetPickListValidation(false).Build();
+			SDKConfig config = new SDKConfig.Builder().AutoRefreshFields(false).PickListValidation(false).Build();
 
-			string resourcePath = "/Users/Documents/GitLab/SampleApp/zohocrm-csharp-sdk-sample-application";
+			string resourcePath = "/Users/Documents";
 
-            /**
-			 * Create an instance of RequestProxy class that takes the following parameters
-			 * 1 -> Host
-			 * 2 -> Port Number
-			 * 3 -> User Name
-			 * 4 -> Password
-			 * 5 -> User Domain
-			 */
-            //RequestProxy requestProxy = new RequestProxy("http://171.0.0.1", 3128, "", "", "");
+			/**
+            * Create an instance of RequestProxy class that takes the following parameters
+            * Host -> Host
+            * Port -> Port Number
+            * User -> User Name
+            * Password -> Password
+            * UserDomain -> User Domain
+            */
+			//RequestProxy requestProxy = new RequestProxy.Builder()
+			//.Host("proxyHost")
+			//.Port(proxyPort)
+			//.User("proxyUser")
+			//.Password("password")
+			//.UserDomain("userDomain")
+			//.Build();
 
-            //RequestProxy requestProxy = new RequestProxy("http://171.0.0.1", 3128, "", null);
+			/*
+            * The initialize method of Initializer class that takes the following arguments
+            * User -> UserSignature instance
+            * Environment -> Environment instance
+            * Token -> Token instance
+            * Store -> TokenStore instance
+            * SDKConfig -> SDKConfig instance
+            * ResourcePath -> resourcePath -A String
+            * Logger -> Logger instance
+            * RequestProxy -> RequestProxy instance
+            */
 
-            /*
-		     * Call static initialize method of Initializer class that takes the arguments
-		     * 1 -> UserSignature instance
-		     * 2 -> Environment instance
-		     * 3 -> Token instance
-		     * 4 -> TokenStore instance
-		     * 5 -> SDKConnfig 
-		     * 6 -> The path containing the absolute directory path to store user specific JSON files containing module fields information.
-		     * 7 -> Logger instance
-		     * 8 -> RequestProxy instance
-		     */
+			// Set the following in InitializeBuilder
+			new SDKInitializer.Builder()
+			.User(user)
+			.Environment(environment)
+			.Token(token)
+			.Store(tokenstore)
+			.SDKConfig(config)
+			.ResourcePath(resourcePath)
+			.Logger(logger)
+			//.RequestProxy(requestProxy)
+			.Initialize();
 
-            // The following are the available initialize methods
+            //foreach (Token token1 in ((DBStore)tokenstore).GetTokens())
+            //{
+            //    OAuthToken authToken = (OAuthToken)token1;
 
-            //SDKInitializer.Initialize(user, environment, token, tokenstore, config, resourcePath);
+            //    Console.WriteLine(authToken.AccessToken);
 
-            SDKInitializer.Initialize(user, environment, token, tokenstore, config, resourcePath, logger);
+            //    Console.WriteLine(authToken.RefreshToken);
 
-			//SDKInitializer.Initialize(user, environment, token, tokenstore, config, resourcePath, requestProxy);
+            //    Console.WriteLine(authToken.ExpiresIn);
 
-			//SDKInitializer.Initialize(user, environment, token, tokenstore, config, resourcePath, logger, requestProxy);
+            //    Console.WriteLine(authToken.GrantToken);
 
-			//foreach (Token token1 in ((DBStore)tokenstore).GetTokens())
-			//{
-			//    OAuthToken authToken = (OAuthToken)token1;
+            //    Console.WriteLine(authToken.ClientId);
 
-			//    Console.WriteLine(authToken.AccessToken);
+            //    Console.WriteLine(authToken.ClientSecret);
 
-			//    Console.WriteLine(authToken.RefreshToken);
+            //    Console.WriteLine(authToken.Id);
 
-			//    Console.WriteLine(authToken.ExpiresIn);
+            //    Console.WriteLine(authToken.RedirectURL);
 
-			//    Console.WriteLine(authToken.GrantToken);
-			//}
-		}
+            //    Console.WriteLine(authToken.UserMail);
+            //}
+        }
 	}
 }

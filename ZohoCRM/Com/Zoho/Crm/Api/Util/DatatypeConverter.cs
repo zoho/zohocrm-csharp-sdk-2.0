@@ -70,7 +70,7 @@ namespace Com.Zoho.Crm.API.Util
 			{
 				return obj;
 			});
-			
+
 			AddToDictionary(typeof(double).FullName,
 			(obj) =>
 			{
@@ -150,7 +150,7 @@ namespace Com.Zoho.Crm.API.Util
 				JArray jsonArray = (JArray)obj;
 
 				List<object> values = new List<object>();
-			
+
 				if(jsonArray.Count > 0)
 				{
 					foreach (object response in jsonArray)
@@ -158,7 +158,7 @@ namespace Com.Zoho.Crm.API.Util
 						values.Add(PreConvertObjectData(response));
 					}
 				}
-			
+
 				return values;
 			}
 			else if (obj is JObject)

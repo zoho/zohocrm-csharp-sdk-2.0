@@ -8,9 +8,9 @@ namespace Com.Zoho.Crm.API.Util
     {
         private T value;
 
-        private Choice() 
-	    {
-	    }
+        private Choice()
+        {
+        }
 
         public Choice(T value)
         {
@@ -24,7 +24,5 @@ namespace Com.Zoho.Crm.API.Util
                 return this.value;
             }
         }
-        
     }
-    
 }

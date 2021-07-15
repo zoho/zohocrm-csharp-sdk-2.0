@@ -25,23 +25,37 @@ namespace Com.Zoho.Crm.Sample.Threading.SingleUser
     {
         public static void RunMultiThreadWithSingleUser()
         {
-            Logger logger = Logger.GetInstance(Logger.Levels.ALL, "/Users/Documents/GitLab/csharp_sdk_log.log");
+            Logger logger = new Logger.Builder()
+                .Level(Logger.Levels.ALL)
+                .FilePath("/Users/Documents/csharp_sdk_log.log")
+                .Build();
 
-            DataCenter.Environment env = USDataCenter.PRODUCTION;
+            DataCenter.Environment environment = USDataCenter.PRODUCTION;
 
             UserSignature user1 = new UserSignature("abc@zoho.com");
 
-            //TokenStore tokenstore = new DBStore(null, null, null, null, null);
+            TokenStore tokenstore = new FileStore("/Users/Documents/csharp_sdk_token.txt");
 
-            TokenStore tokenstore = new FileStore("/Users/Documents/GitLab/csharp_sdk_token.txt");
+            Token token1 = new OAuthToken.Builder()
+                .ClientId("ClientId")
+                .ClientSecret("ClientSecret")
+                .RefreshToken("RefreshToken")
+                .RedirectURL("https://www.zoho.com")
+                .Build();
 
-            Token token1 = new OAuthToken("1000.xxxxxx", "xxxxxx", "1000.xxxxxx.xxxxxx", TokenType.REFRESH, "https://www.zoho.com");
+            string resourcePath = "/Users/Documents";
 
-            string resourcePath = "/Users/Documents/GitLab/SampleApp/zohocrm-csharp-sdk-sample-application";
+            SDKConfig config = new SDKConfig.Builder().AutoRefreshFields(true).Build();
 
-            SDKConfig config = new SDKConfig.Builder().SetAutoRefreshFields(true).Build();
-
-            SDKInitializer.Initialize(user1, env, token1, tokenstore, config, resourcePath, logger);
+            new SDKInitializer.Builder()
+               .User(user1)
+               .Environment(environment)
+               .Token(token1)
+               .Store(tokenstore)
+               .SDKConfig(config)
+               .ResourcePath(resourcePath)
+               .Logger(logger)
+               .Initialize();
 
             MultiThread multiThread1 = new MultiThread();
 

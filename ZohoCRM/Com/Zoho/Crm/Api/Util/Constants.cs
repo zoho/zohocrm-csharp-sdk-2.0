@@ -99,7 +99,7 @@ namespace Com.Zoho.Crm.API.Util
 
         public static readonly string ZOHO_SDK = "X-ZOHO-SDK";
 
-        public static readonly string SDK_VERSION = "1.0.0";
+        public static readonly string SDK_VERSION = "2.0.0";
 
         public static readonly string MODULEPACKAGENAME = "modulePackageName";
 
@@ -147,7 +147,7 @@ namespace Com.Zoho.Crm.API.Util
 
         internal static readonly string CLIENT_SECRET = "client_secret";
 
-        internal static readonly string REDIRECT_URL = "redirect_uri";
+        internal static readonly string REDIRECT_URL = "redirect_url";
 
         public static readonly List<int> FaultyResponseCodes;
 
@@ -206,25 +206,6 @@ namespace Com.Zoho.Crm.API.Util
         public static readonly string LOG_WARNING = "WARNING";
 
         public static readonly string VALUES = "values";
-
-        static Constants()
-        {
-            DATATYPE = new Dictionary<string, string>()
-            {
-                {"com.zoho.api.spec.template.type.TString", "System.String"},
-                {"com.zoho.api.spec.template.type.TLong", "System.Int64"},
-                {"com.zoho.api.spec.template.type.TMap", "System.Collections.Generic.Dictionary`2[[System.Object],[System.Object]]"},
-                {"com.zoho.api.spec.template.type.TInteger", "System.Int32"},
-                {"text", "System.String"}
-            };
-
-
-            FaultyResponseCodes = new List<int>
-            {
-               204,
-               304
-            };
-        }
 
         public static readonly string REQUEST_METHOD_GET = "GET";
 
@@ -624,7 +605,92 @@ namespace Com.Zoho.Crm.API.Util
 
         public static readonly string RESOURCE_PATH_INVALID_ERROR_MESSAGE = "Resource Path MUST be a valid directory.";
 
-        //TODO: Write enum class for RequestMethod and ResponseCode and implement their functions;
+        public static readonly string TOKEN_ERROR = "TOKEN ERROR";
 
+        public static readonly string CLIENT_ID_NULL_ERROR_MESSAGE = "ClientID MUST NOT be null";
+
+        public static readonly string CLIENT_SECRET_NULL_ERROR_MESSAGE = "ClientSecret MUST NOT be null";
+
+        public static readonly List<string> OAUTH_MANDATORY_KEYS = new List<string>() { "grantToken", "refreshToken", "id" };
+
+        public static readonly List<string> SKIP_MODULES = new List<string>() { "deals" };
+
+        public static readonly string PORT_ERROR_MESSAGE = "Port MUST NOT be null.";
+
+        public static readonly string MYSQL_TABLE_NAME = "oauthtoken";
+
+        public static readonly string REDIRECT_URI = "redirect_uri";
+
+        public static readonly string GET_TOKEN_BY_ID_DB_ERROR = "Exception in getTokenById - DBStore : Given ID is invalid";
+
+        public static readonly string GET_TOKEN_BY_ID_FILE_ERROR = "Exception in getTokenById - FileStore : Given ID is invalid";
+
+        public static readonly string INVALID_TOKEN_ERROR = "INVALID TOKEN ERROR";
+
+        public static readonly Dictionary<string, string> DEFAULT_MODULENAME_VS_APINAME;
+
+        public static readonly string NO_ACCESS_TOKEN_ERROR = "ACCESS TOKEN IS NOT PRESENT IN RESPONSE";
+
+        public static readonly string SDK_MODULE_METADATA = "SDK-MODULE-METADATA";
+
+        public static readonly List<string> GENERATE_REQUEST_BODY = new List<string>() { Constants.REQUEST_METHOD_PATCH, Constants.REQUEST_METHOD_POST, Constants.REQUEST_METHOD_PUT };
+
+        public static readonly List<string> PHOTO_SUPPORTED_MODULES = new List<string> { "leads", "contacts", "accounts", "products", "vendors", "deals", "cases", "solutions" };
+
+        public static readonly string GENERATED_TYPE = "generated_type";
+
+        public static readonly string GENERATED_TYPE_CUSTOM = "custom";
+
+        public static readonly string UPLOAD_PHOTO_UNSUPPORTED_ERROR = "UPLOAD PHOTO UNSUPPORTED MODULE";
+
+        public static readonly string UPLOAD_PHOTO_UNSUPPORTED_MESSAGE = "Photo Upload Operation is not supported by the module: ";
+
+        public static readonly string CSHARP_NULL_TYPE_NAME = "System.Nullable`1";
+
+        static Constants()
+        {
+            DEFAULT_MODULENAME_VS_APINAME = new Dictionary<string, string>()
+            {
+                { "leads", "Leads" },
+                { "contacts", "Contacts" },
+                { "accounts", "Accounts" },
+                { "deals", "Deals" },
+                { "tasks", "Tasks" },
+                { "events", "Events" },
+                { "activities", "Activities" },
+                { "calls", "Calls" },
+                { "products", "Products" },
+                { "quotes", "Quotes" },
+                { "sales_orders", "Sales_Orders" },
+                { "purchase_orders", "Purchase_Orders" },
+                { "invoices", "Invoices" },
+                { "campaigns", "Campaigns" },
+                { "vendors", "Vendors" },
+                { "price_books", "Price_Books" },
+                { "cases", "Cases" },
+                { "solutions", "Solutions" },
+                { "visits", "Visits" },
+                { "approvals", "Approvals" },
+                { "notes", "Notes" },
+                { "attachments", "Attachments" },
+                { "actions_performed","Actions_Performed" }
+            };
+
+            DATATYPE = new Dictionary<string, string>()
+            {
+                {"com.zoho.api.spec.template.type.TString", "System.String"},
+                {"com.zoho.api.spec.template.type.TLong", "System.Int64"},
+                {"com.zoho.api.spec.template.type.TMap", "System.Collections.Generic.Dictionary`2[[System.Object],[System.Object]]"},
+                {"com.zoho.api.spec.template.type.TInteger", "System.Int32"},
+                {"text", "System.String"}
+            };
+
+
+            FaultyResponseCodes = new List<int>
+            {
+               204,
+               304
+            };
+        }
     }
 }
