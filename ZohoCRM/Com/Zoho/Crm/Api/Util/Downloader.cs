@@ -43,17 +43,17 @@ namespace Com.Zoho.Crm.API.Util
             if (recordJsonDetails.ContainsKey(Constants.INTERFACE) && (bool)recordJsonDetails.GetValue(Constants.INTERFACE))
             {
                 JArray classes = (JArray)recordJsonDetails.GetValue(Constants.CLASSES);
-                
+
                 foreach(object classObject in classes)
                 {
                     string className = classObject.ToString();
-                    
+
                     if(className.Contains(Constants.FILEBODYWRAPPER))
                     {
                         return GetResponse(response, className);
                     }
                 }
-                
+
                 return instance;
             }
             else
@@ -94,8 +94,8 @@ namespace Com.Zoho.Crm.API.Util
                     }
                 }
             }
-            
+
             return instance;
-        }        
+        }
     }
 }

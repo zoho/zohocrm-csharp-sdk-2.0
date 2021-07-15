@@ -41,37 +41,55 @@ namespace Com.Zoho.Crm.Sample.Threading.MultiUser
 
         public static void RunMultiThreadWithMultiUser()
         {
-            Logger logger = Logger.GetInstance(Logger.Levels.ALL, "/Users/Documents/GitLab/csharp_sdk_log.log");
+            Logger logger = new Logger.Builder()
+                .Level(Logger.Levels.ALL)
+                .FilePath("/Users/Documents/GitLab/csharp_sdk_log.log")
+                .Build();
 
-            DataCenter.Environment env = USDataCenter.PRODUCTION;
+            DataCenter.Environment environment1 = USDataCenter.PRODUCTION;
 
             UserSignature user1 = new UserSignature("abc@zoho.com");
 
-            //TokenStore tokenstore = new DBStore(null, null, null, null, null);
-
             TokenStore tokenstore = new FileStore("/Users/Documents/GitLab/csharp_sdk_token.txt");
 
-            Token token1 = new OAuthToken("1000.xxxxxx", "xxxxxx", "1000.xxxxxx.xxxxxx", TokenType.REFRESH, "https://www.zoho.com");
+            Token token1 = new OAuthToken.Builder()
+                .ClientId("ClientId")
+                .ClientSecret("ClientSecret")
+                .RefreshToken("RefreshToken")
+                .RedirectURL("https://www.zoho.com")
+                .Build();
 
-            string resourcePath = "/Users/Documents/GitLab/SampleApp/zohocrm-csharp-sdk-sample-application";
+            string resourcePath = "/Users/Documents";
 
-            DataCenter.Environment environment = USDataCenter.PRODUCTION;
+            DataCenter.Environment environment2 = USDataCenter.PRODUCTION;
 
             UserSignature user2 = new UserSignature("abc1@zoho.com");
 
-            Token token2 = new OAuthToken("1000.xxxxxx", "xxxxxx", "1000.xxxxxx.xxxxxx", TokenType.REFRESH);
+            Token token2 = new OAuthToken.Builder()
+                .ClientId("ClientId")
+                .ClientSecret("ClientSecret")
+                .RefreshToken("RefreshToken")
+                .Build();
 
-            SDKConfig config = new SDKConfig.Builder().SetAutoRefreshFields(true).Build();
+            SDKConfig config = new SDKConfig.Builder().AutoRefreshFields(true).Build();
 
-            SDKInitializer.Initialize(user1, env, token1, tokenstore, config, resourcePath, logger);
+            new SDKInitializer.Builder()
+               .User(user1)
+               .Environment(environment1)
+               .Token(token1)
+               .Store(tokenstore)
+               .SDKConfig(config)
+               .ResourcePath(resourcePath)
+               .Logger(logger)
+               .Initialize();
 
-            MultiThread multiThread1 = new MultiThread(user1, env, token1, "Vendors");
+            MultiThread multiThread1 = new MultiThread(user1, environment1, token1, "Vendors");
 
             Thread thread1 = new Thread(() => multiThread1.GetRecords());
 
             thread1.Start();
 
-            MultiThread multiThread2 = new MultiThread(user2, environment, token2, "Quotes");
+            MultiThread multiThread2 = new MultiThread(user2, environment2, token2, "Quotes");
 
             Thread thread2 = new Thread(() => multiThread2.GetRecords());
 
@@ -86,9 +104,14 @@ namespace Com.Zoho.Crm.Sample.Threading.MultiUser
         {
             try
             {
-                SDKConfig config = new SDKConfig.Builder().SetAutoRefreshFields(true).Build();
+                SDKConfig config = new SDKConfig.Builder().AutoRefreshFields(true).Build();
 
-                SDKInitializer.SwitchUser(this.user, this.environment, this.token, config);
+                new SDKInitializer.Builder()
+               .User(this.user)
+               .Environment(this.environment)
+               .Token(this.token)
+               .SDKConfig(config)
+               .SwitchUser();
 
                 Console.WriteLine("Fetching Cr's for user - " + SDKInitializer.GetInitializer().User.Email);
 

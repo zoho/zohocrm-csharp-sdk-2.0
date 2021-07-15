@@ -411,7 +411,7 @@ namespace Com.Zoho.Crm.Sample.Currencies
             currency.PrefixSymbol = true;
 
             //To set currency Id
-            //currency.Id = 34770616040001;
+            currency.Id = 3477061040001;
 
             //To set the rate at which the currency has to be exchanged for home currency.
             currency.ExchangeRate = "5.00";
@@ -619,7 +619,7 @@ namespace Com.Zoho.Crm.Sample.Currencies
             format.DecimalPlaces = new Choice<string>("2");
             
             //To set the format of the base currency
-            //currency.Format = format;
+            currency.Format = format;
             
             //Set the Currency in BodyWrapper instance
             bodyWrapper.BaseCurrency = currency;
@@ -777,7 +777,7 @@ namespace Com.Zoho.Crm.Sample.Currencies
             currency.ExchangeRate = "1.00";
 
             //To set currency Id
-            currency.Id = 34770616008002;
+            currency.Id = 3477061008002;
 
             Format format = new Format();
             
@@ -930,7 +930,7 @@ namespace Com.Zoho.Crm.Sample.Currencies
         public static void GetCurrency(long currencyId)
         {
             //example
-            //long currencyId = 34770616011001;
+            //long currencyId = 3477061011001;
             
             //Get instance of CurrenciesOperations Class
             CurrenciesOperations currenciesOperations = new CurrenciesOperations();
@@ -1100,7 +1100,7 @@ namespace Com.Zoho.Crm.Sample.Currencies
         public static void UpdateCurrency(long currencyId)
         {
             //example
-            //long currencyId = 34770616011001;
+            //long currencyId = 3477061011001;
             
             //Get instance of CurrenciesOperations Class
             CurrenciesOperations currenciesOperations = new CurrenciesOperations();

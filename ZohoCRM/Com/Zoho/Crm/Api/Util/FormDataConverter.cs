@@ -6,8 +6,6 @@ using System.Collections.Generic;
 
 using System.IO;
 
-using System.Linq;
-
 using System.Net;
 
 using System.Reflection;
@@ -15,10 +13,6 @@ using System.Reflection;
 using System.Text;
 
 using Com.Zoho.API.Exception;
-
-using Com.Zoho.Crm.API.Logger;
-
-using Newtonsoft.Json;
 
 using Newtonsoft.Json.Linq;
 
@@ -81,7 +75,7 @@ namespace Com.Zoho.Crm.API.Util
                 {
                     object fieldValue = field.GetValue(requestInstance);// value of the member
 
-                    if (modification != null && (int)modification != 0 && this.ValueChecker(requestInstance.GetType().FullName, memberName, memberDetail, fieldValue, uniqueValuesMap, instanceNumber) == true)
+                    if (modification != null && (int)modification != 0 && fieldValue != null && this.ValueChecker(requestInstance.GetType().FullName, memberName, memberDetail, fieldValue, uniqueValuesMap, instanceNumber) == true)
                     {
                         string keyName = (string)memberDetail.GetValue(Constants.NAME);
 
@@ -292,7 +286,7 @@ namespace Com.Zoho.Crm.API.Util
                     }
                 }
             }
-            
+
             return listObject;
         }
 
@@ -314,7 +308,7 @@ namespace Com.Zoho.Crm.API.Util
 
         public override object GetWrappedResponse(object response, string pack)
         {
-            throw new NotImplementedException();
+            return GetResponse(response, pack);
         }
 
         public override object GetResponse(object response, string pack)

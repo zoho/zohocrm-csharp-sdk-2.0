@@ -39,7 +39,7 @@ namespace Com.Zoho.Crm.API.Util
     {
         private static object LOCK = new object();
 
-        private static Dictionary<string, string> apiTypeVsdataType = new Dictionary<string, string>();
+        private static Dictionary<string, string> apiTypeVsDataType = new Dictionary<string, string>();
 
         private static Dictionary<string, string> apiTypeVsStructureName = new Dictionary<string, string>();
 
@@ -53,22 +53,151 @@ namespace Com.Zoho.Crm.API.Util
 
         private static string moduleAPIName;
 
+        private static JObject apiSupportedModule = new JObject();
+
+        public static void AssertNotNull(object value, string errorCode, string errorMessage)
+        {
+            if(value == null)
+            {
+                throw new SDKException(errorCode, errorMessage);
+            }
+        }
+
+        private static void FileExistsFlow(string moduleAPIName, string recordFieldDetailsPath, string lastModifiedTime)
+        {
+            JObject recordFieldDetailsJson = Initializer.GetJSON(recordFieldDetailsPath);
+
+            if (Initializer.GetInitializer().SDKConfig.AutoRefreshFields && !newFile && !getModifiedModules && (String.IsNullOrEmpty((string)recordFieldDetailsJson[Constants.FIELDS_LAST_MODIFIED_TIME]) || forceRefresh || (DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - Convert.ToInt64(recordFieldDetailsJson[Constants.FIELDS_LAST_MODIFIED_TIME])) > 3600000))
+            {
+                getModifiedModules = true;
+
+                lastModifiedTime = (!forceRefresh && recordFieldDetailsJson.ContainsKey(Constants.FIELDS_LAST_MODIFIED_TIME)) ? (string)recordFieldDetailsJson.GetValue(Constants.FIELDS_LAST_MODIFIED_TIME) : null;
+
+                ModifyFields(recordFieldDetailsPath, lastModifiedTime);
+
+                getModifiedModules = false;
+            }
+            else if (!Initializer.GetInitializer().SDKConfig.AutoRefreshFields && forceRefresh && !getModifiedModules)
+            {
+                getModifiedModules = true;
+
+                ModifyFields(recordFieldDetailsPath, lastModifiedTime);
+
+                getModifiedModules = false;
+            }
+
+            recordFieldDetailsJson = Initializer.GetJSON(recordFieldDetailsPath);
+
+            if (moduleAPIName == null || recordFieldDetailsJson.ContainsKey(moduleAPIName.ToLower()))
+            {
+                return;
+            }
+            else
+            {
+                FillDataType();
+
+                recordFieldDetailsJson[moduleAPIName.ToLower()] = new JObject();
+
+                using (StreamWriter sw = System.IO.File.CreateText(recordFieldDetailsPath))
+                {
+                    JsonSerializer serializer = new JsonSerializer();
+
+                    serializer.Serialize(sw, recordFieldDetailsJson);
+
+                    sw.Flush();
+
+                    sw.Close();
+                }
+
+                JObject fieldDetails = (JObject)GetFieldsDetails(moduleAPIName);
+
+                recordFieldDetailsJson = Initializer.GetJSON(recordFieldDetailsPath);
+
+                recordFieldDetailsJson[moduleAPIName.ToLower()] = fieldDetails;
+
+                using (StreamWriter sw = System.IO.File.CreateText(recordFieldDetailsPath))
+                {
+                    JsonSerializer serializer = new JsonSerializer();
+
+                    serializer.Serialize(sw, recordFieldDetailsJson);
+
+                    sw.Flush();
+
+                    sw.Close();
+                }
+            }
+        }
+
+        private static string VerifyModuleAPIName(string moduleName)
+        {
+            if (moduleName != null && Constants.DEFAULT_MODULENAME_VS_APINAME.ContainsKey(moduleName.ToLower()))
+            {
+                return Constants.DEFAULT_MODULENAME_VS_APINAME[moduleName.ToLower()];
+            }
+
+            string recordFieldDetailsPath = GetFileName();
+
+            if (System.IO.File.Exists(recordFieldDetailsPath))
+            {
+                JObject fieldsJSON = Initializer.GetJSON(recordFieldDetailsPath);
+
+                if (fieldsJSON.ContainsKey(Constants.SDK_MODULE_METADATA) && ((JObject)fieldsJSON.GetValue(Constants.SDK_MODULE_METADATA)).ContainsKey(moduleName.ToLower()))
+                {
+                    JObject moduleMetaData = ((JObject)fieldsJSON.GetValue(Constants.SDK_MODULE_METADATA));
+
+                    return (string)((JObject)moduleMetaData.GetValue(moduleName.ToLower())).GetValue(Constants.API_NAME);
+                }
+            }
+
+            return moduleName;
+        }
+
+        private static void SetHandlerAPIPath(string moduleAPIName, CommonAPIHandler handlerInstance)
+        {
+            if(handlerInstance == null)
+            {
+                return;
+            }
+
+            string apiPath = handlerInstance.APIPath;
+
+            if(apiPath.ToLower().Contains(moduleAPIName.ToLower()))
+            {
+                string[] apiPathSplit = apiPath.Split('/');
+
+                for(int i=0; i< apiPathSplit.Length; i++)
+                {
+                    if(apiPathSplit[i].Equals(moduleAPIName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        apiPathSplit[i] = moduleAPIName;
+                    }
+                    else if(Constants.DEFAULT_MODULENAME_VS_APINAME.ContainsKey(apiPathSplit[i].ToLower()))
+                    {
+                        apiPathSplit[i] = Constants.DEFAULT_MODULENAME_VS_APINAME[apiPathSplit[i].ToLower()];
+                    }
+                }
+
+                apiPath = string.Join("/", apiPathSplit);
+
+                handlerInstance.APIPath = apiPath;
+            }
+        }
+
         /// <summary>
         /// This method to fetch field details of the current module for the current user and store the result in a JSON file.
         /// </summary>
         /// <param name="moduleAPIName">A String containing the CRM module API name.</param>
-
-        public static void GetFields(string moduleAPIName)
+        public static void GetFields(string moduleAPIName, CommonAPIHandler handlerInstance)
         {
             lock (LOCK)
             {
                 Utility.moduleAPIName = moduleAPIName;
 
-                GetFieldsInfo(Utility.moduleAPIName);
+                GetFieldsInfo(Utility.moduleAPIName, handlerInstance);
             }
         }
 
-        public static void GetFieldsInfo(string moduleAPIName)
+        public static void GetFieldsInfo(string moduleAPIName, CommonAPIHandler handlerInstance)
         {
             lock (LOCK)
             {
@@ -90,71 +219,20 @@ namespace Com.Zoho.Crm.API.Util
                         Directory.CreateDirectory(resourcesPath);
                     }
 
-                    recordFieldDetailsPath = resourcesPath + Path.DirectorySeparatorChar + GetFileName();
+                    moduleAPIName = VerifyModuleAPIName(moduleAPIName);
+
+                    SetHandlerAPIPath(moduleAPIName, handlerInstance);
+
+                    if (handlerInstance != null && handlerInstance.ModuleAPIName == null && !Constants.SKIP_MODULES.Contains(moduleAPIName.ToLower()))
+                    {
+                        return;
+                    }
+
+                    recordFieldDetailsPath = GetFileName();
 
                     if (System.IO.File.Exists(recordFieldDetailsPath))
                     {
-                        JObject recordFieldDetailsJson = Initializer.GetJSON(recordFieldDetailsPath);
-
-                        if (Initializer.GetInitializer().SDKConfig.AutoRefreshFields && !newFile && !getModifiedModules && (String.IsNullOrEmpty((string)recordFieldDetailsJson[Constants.FIELDS_LAST_MODIFIED_TIME]) || forceRefresh || (DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - Convert.ToInt64(recordFieldDetailsJson[Constants.FIELDS_LAST_MODIFIED_TIME])) > 3600000))
-                        {
-                            getModifiedModules = true;
-
-                            lastModifiedTime = recordFieldDetailsJson.ContainsKey(Constants.FIELDS_LAST_MODIFIED_TIME) ? (string)recordFieldDetailsJson.GetValue(Constants.FIELDS_LAST_MODIFIED_TIME) : null;
-
-                            ModifyFields(recordFieldDetailsPath, lastModifiedTime);
-
-                            getModifiedModules = false;
-                        }
-                        else if(!Initializer.GetInitializer().SDKConfig.AutoRefreshFields && forceRefresh && !getModifiedModules)
-                        {
-                            getModifiedModules = true;
-                            
-                            ModifyFields(recordFieldDetailsPath, lastModifiedTime);
-                            
-                            getModifiedModules = false;
-                        }
-
-                        recordFieldDetailsJson = Initializer.GetJSON(recordFieldDetailsPath);
-
-                        if (moduleAPIName == null || recordFieldDetailsJson.ContainsKey(moduleAPIName.ToLower()))
-                        {
-                            return;
-                        }
-                        else
-                        {
-                            FillDataType();
-
-                            recordFieldDetailsJson[moduleAPIName.ToLower()] = new JObject();
-
-                            using (StreamWriter sw = System.IO.File.CreateText(recordFieldDetailsPath))
-                            {
-                                JsonSerializer serializer = new JsonSerializer();
-
-                                serializer.Serialize(sw, recordFieldDetailsJson);
-
-                                sw.Flush();
-
-                                sw.Close();
-                            }
-
-                            JObject fieldDetails = (JObject)GetFieldsDetails(moduleAPIName);
-
-                            recordFieldDetailsJson = Initializer.GetJSON(recordFieldDetailsPath);
-
-                            recordFieldDetailsJson[moduleAPIName.ToLower()] = fieldDetails;
-
-                            using (StreamWriter sw = System.IO.File.CreateText(recordFieldDetailsPath))
-                            {
-                                JsonSerializer serializer = new JsonSerializer();
-
-                                serializer.Serialize(sw, recordFieldDetailsJson);
-
-                                sw.Flush();
-
-                                sw.Close();
-                            }
-                        }
+                        FileExistsFlow(moduleAPIName, recordFieldDetailsPath, lastModifiedTime);
                     }
                     else if(Initializer.GetInitializer().SDKConfig.AutoRefreshFields)
                     {
@@ -162,17 +240,21 @@ namespace Com.Zoho.Crm.API.Util
 
                         FillDataType();
 
-                        List<string> moduleAPINames = GetModules(null);
-                    
-                        JObject recordFieldDetailsJson = new JObject();
-                    
+                        apiSupportedModule = apiSupportedModule.Count > 0 ? apiSupportedModule : GetModules(null);
+
+                        JObject recordFieldDetailsJson = System.IO.File.Exists(recordFieldDetailsPath) ? Initializer.GetJSON(recordFieldDetailsPath) : new JObject();
+
                         recordFieldDetailsJson[Constants.FIELDS_LAST_MODIFIED_TIME] = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-                    
-                        foreach(string module in moduleAPINames)
+
+                        foreach(var moduleData in apiSupportedModule)
                         {
-                            if (!recordFieldDetailsJson.ContainsKey(module.ToLower()))
+                            string moduleName = moduleData.Key;
+
+                            JObject metaData = (JObject)moduleData.Value;
+
+                            if (!recordFieldDetailsJson.ContainsKey(moduleName.ToLower()))
                             {
-                                recordFieldDetailsJson[module.ToLower()] = new JObject();
+                                recordFieldDetailsJson[moduleName.ToLower()] = new JObject();
 
                                 using (StreamWriter sw = System.IO.File.CreateText(recordFieldDetailsPath))
                                 {
@@ -185,11 +267,11 @@ namespace Com.Zoho.Crm.API.Util
                                     sw.Close();
                                 }
 
-							    JObject fieldDetails = (JObject)GetFieldsDetails(module);
+							    JObject fieldDetails = (JObject)GetFieldsDetails((string)metaData.GetValue(Constants.API_NAME));
 
 							    recordFieldDetailsJson = Initializer.GetJSON(recordFieldDetailsPath);
 
-							    recordFieldDetailsJson[module.ToLower()] = fieldDetails;
+							    recordFieldDetailsJson[moduleName.ToLower()] = fieldDetails;
 
                                 using (StreamWriter sw = System.IO.File.CreateText(recordFieldDetailsPath))
                                 {
@@ -203,14 +285,14 @@ namespace Com.Zoho.Crm.API.Util
                                 }
                             }
                         }
-                        
+
                         newFile = false;
                     }
                     else if(forceRefresh && !getModifiedModules)
                     {
                         //New file - and force refresh by User
                         getModifiedModules = true;
-                        
+
                         JObject recordFieldDetailsJson = new JObject();
 
                         using (StreamWriter sw = System.IO.File.CreateText(recordFieldDetailsPath))
@@ -223,9 +305,9 @@ namespace Com.Zoho.Crm.API.Util
 
                             sw.Close();// file created with only dummy
                         }
-                        
+
                         ModifyFields(recordFieldDetailsPath, lastModifiedTime);
-                        
+
                         getModifiedModules = false;
                     }
                     else
@@ -270,8 +352,8 @@ namespace Com.Zoho.Crm.API.Util
                     if(recordFieldDetailsPath != null && System.IO.File.Exists(recordFieldDetailsPath))
 			        {
 				        JObject recordFieldDetailsJson;
-				
-				        try 
+
+				        try
 				        {
 					        recordFieldDetailsJson = Initializer.GetJSON(recordFieldDetailsPath);
 
@@ -279,23 +361,23 @@ namespace Com.Zoho.Crm.API.Util
 					        {
 						        recordFieldDetailsJson.Remove(moduleAPIName.ToLower());
 					        }
-					
+
 					        if(newFile)
 					        {
 						        if(recordFieldDetailsJson.GetValue(Constants.FIELDS_LAST_MODIFIED_TIME) != null)
 						        {
 							        recordFieldDetailsJson.Remove(Constants.FIELDS_LAST_MODIFIED_TIME);
 						        }
-						
+
 						        newFile = false;
 					        }
-					
+
 					        if(getModifiedModules || forceRefresh)
 					        {
 						        getModifiedModules = false;
 
                                 forceRefresh = false;
-						
+
 						        if(lastModifiedTime != null)
 						        {
 							        recordFieldDetailsJson[Constants.FIELDS_LAST_MODIFIED_TIME] = lastModifiedTime;
@@ -312,8 +394,8 @@ namespace Com.Zoho.Crm.API.Util
 
 								sw.Close();
 							}
-						} 
-				        catch (IOException ex) 
+						}
+				        catch (IOException ex)
 				        {
                             throw new SDKException(Constants.EXCEPTION, ex);
 				        }
@@ -324,14 +406,14 @@ namespace Com.Zoho.Crm.API.Util
             }
         }
 
-        private static void ModifyFields(string recordFieldDetailsPath, string modifiedTime)
+               private static void ModifyFields(string recordFieldDetailsPath, string modifiedTime)
 	    {
-		    List<string> modifiedModules = GetModules(modifiedTime);
-		
+		    JObject modifiedModules = GetModules(modifiedTime);
+
 		    JObject recordFieldDetailsJson = Initializer.GetJSON(recordFieldDetailsPath);
-		
+
 		    recordFieldDetailsJson[Constants.FIELDS_LAST_MODIFIED_TIME] = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-		
+
 			using (StreamWriter sw = System.IO.File.CreateText(recordFieldDetailsPath))
 			{
 				JsonSerializer serializer = new JsonSerializer();
@@ -345,11 +427,11 @@ namespace Com.Zoho.Crm.API.Util
 
 			if (modifiedModules.Count > 0)
 		    {
-			    foreach(string module in modifiedModules)
+			    foreach(var moduleMetaData in modifiedModules)
 			    {
-				    if(recordFieldDetailsJson.ContainsKey(module.ToLower()))
+				    if(recordFieldDetailsJson.ContainsKey(moduleMetaData.Key.ToLower()))
 				    {
-					    DeleteFields(recordFieldDetailsJson, module);
+					    DeleteFields(recordFieldDetailsJson, moduleMetaData.Key.ToLower());
 				    }
 			    }
 
@@ -364,9 +446,11 @@ namespace Com.Zoho.Crm.API.Util
 					sw.Close();
 				}
 
-				foreach (string module in modifiedModules)
+				foreach (var moduleMetaData in modifiedModules)
 			    {
-                    GetFieldsInfo(module);
+                    JObject moduleData = (JObject)moduleMetaData.Value;
+
+				    GetFieldsInfo((string)moduleData.GetValue(Constants.API_NAME), null);
 			    }
 		    }
 	    }
@@ -374,7 +458,7 @@ namespace Com.Zoho.Crm.API.Util
         public static void DeleteFields(JObject recordFieldDetailsJson, string module)
         {
             lock (LOCK)
-            { 
+            {
                 List<string> subformModules = new List<string>();
 
                 JObject fieldsJSON = (JObject)recordFieldDetailsJson[module.ToLower()];
@@ -403,7 +487,9 @@ namespace Com.Zoho.Crm.API.Util
 
         private static string GetFileName()
 	    {
-			string fileName = Initializer.GetInitializer().User.Email;
+            string resourcesPath = Initializer.GetInitializer().ResourcePath + Path.DirectorySeparatorChar + Constants.FIELD_DETAILS_DIRECTORY;
+
+            string fileName = Initializer.GetInitializer().User.Email;
 
 			fileName = fileName.Substring(0, fileName.IndexOf("@")) + Initializer.GetInitializer().Environment.GetUrl();
 
@@ -411,7 +497,7 @@ namespace Com.Zoho.Crm.API.Util
 
 			string str = Convert.ToBase64String(input);
 
-			return str + ".json";
+			return resourcesPath + Path.DirectorySeparatorChar + str + ".json";
 	    }
 
         public static void GetRelatedLists(string relatedModuleName, string moduleAPIName, CommonAPIHandler commonAPIHandler)
@@ -431,11 +517,13 @@ namespace Com.Zoho.Crm.API.Util
                         Directory.CreateDirectory(resourcesPath);
                     }
 
-                    string recordFieldDetailsPath = resourcesPath + Path.DirectorySeparatorChar + GetFileName();
+                    string recordFieldDetailsPath = GetFileName();
 
                     if (!System.IO.File.Exists(recordFieldDetailsPath) || (System.IO.File.Exists(recordFieldDetailsPath) && (!Initializer.GetJSON(recordFieldDetailsPath).ContainsKey(key) || (Initializer.GetJSON(recordFieldDetailsPath).GetValue(key) == null || ((JArray)Initializer.GetJSON(recordFieldDetailsPath).GetValue(key)).Count <= 0))))
                     {
                         isNewData = true;
+
+                        moduleAPIName = Utility.VerifyModuleAPIName(moduleAPIName);
 
                         JArray relatedListValues = GetRelatedListDetails(moduleAPIName);
 
@@ -457,7 +545,7 @@ namespace Com.Zoho.Crm.API.Util
 
                     JObject recordFieldDetailsJSON = Initializer.GetJSON(recordFieldDetailsPath);
 
-                    JArray modulerelatedList = (JArray)recordFieldDetailsJSON.GetValue(key);
+                    JArray modulerelatedList = recordFieldDetailsJSON.ContainsKey(key) ?(JArray)recordFieldDetailsJSON.GetValue(key) : new JArray();
 
                     if (!CheckRelatedListExists(relatedModuleName, modulerelatedList, commonAPIHandler) && !isNewData)
                     {
@@ -503,13 +591,13 @@ namespace Com.Zoho.Crm.API.Util
                     {
                         commonAPIHandler.ModuleAPIName = (string)relatedListJO[Constants.MODULE];
 
-                        GetFieldsInfo((string)relatedListJO[Constants.MODULE]);
+                        GetFieldsInfo((string)relatedListJO[Constants.MODULE], commonAPIHandler);
                     }
 
 				    return true;
 			    }
 		    }
-		
+
 		    return false;
 	    }
 	
@@ -591,9 +679,7 @@ namespace Com.Zoho.Crm.API.Util
 		
 		    FieldsOperations fieldOperation = new FieldsOperations(moduleAPIName);
 
-			ParameterMap parameterinstance = new ParameterMap();
-
-		    APIResponse<Com.Zoho.Crm.API.Fields.ResponseHandler> response = fieldOperation.GetFields(parameterinstance);
+		    APIResponse<Com.Zoho.Crm.API.Fields.ResponseHandler> response = fieldOperation.GetFields(new ParameterMap());
 		
 		    if(response != null)
 		    {
@@ -671,7 +757,7 @@ namespace Com.Zoho.Crm.API.Util
 
                         SDKException exception1 = new SDKException(Constants.API_EXCEPTION, errorResponse);
 
-                        if (Utility.moduleAPIName.ToLower().Equals(moduleAPIName.ToLower()))
+                        if(Utility.moduleAPIName.Equals(moduleAPIName, StringComparison.OrdinalIgnoreCase))
                         {
                             throw exception1;
                         }
@@ -696,7 +782,12 @@ namespace Com.Zoho.Crm.API.Util
         {
             key = Constants.PACKAGE_NAMESPACE + ".Record." + key;
 
-            foreach(KeyValuePair<string, JToken> member in JSONDETAILS)
+            if(JSONDETAILS == null)
+            {
+                JSONDETAILS = Initializer.jsonDetails;
+            }
+
+            foreach (KeyValuePair<string, JToken> member in JSONDETAILS)
             {
                 string keyInJSON = member.Key;
 
@@ -715,14 +806,94 @@ namespace Com.Zoho.Crm.API.Util
             return null;
         }
 
-        public static void VerifyPhotoSupport(string moduleAPIName)
+        public static bool VerifyPhotoSupport(string moduleAPIName)
         {
-            return;
+            lock(LOCK)
+            {
+                try
+                {
+                    moduleAPIName = VerifyModuleAPIName(moduleAPIName);
+
+                    if (Constants.PHOTO_SUPPORTED_MODULES.Contains(moduleAPIName.ToLower()))
+                    {
+                        return true;
+                    }
+
+                    JObject modules = GetModuleNames();
+
+                    if(modules.ContainsKey(moduleAPIName.ToLower()))
+                    {
+                        JObject moduleMetaData = (JObject)modules.GetValue(moduleAPIName.ToLower());
+
+                        if(moduleMetaData.ContainsKey(Constants.GENERATED_TYPE) && !((string)moduleMetaData.GetValue(Constants.GENERATED_TYPE)).Equals(Constants.GENERATED_TYPE_CUSTOM))
+                        {
+                            throw new SDKException(Constants.UPLOAD_PHOTO_UNSUPPORTED_ERROR, Constants.UPLOAD_PHOTO_UNSUPPORTED_MESSAGE + moduleAPIName);
+                        }
+                    }
+                }
+                catch (SDKException e)
+                {
+                    throw e;
+                }
+                catch (Exception e)
+                {
+                    SDKException exception = new SDKException(Constants.EXCEPTION, e);
+
+                    throw exception;
+                }
+
+                return true;
+            }
         }
 
-        private static List<string> GetModules(string header)
+        private static JObject GetModuleNames()
+        {
+            JObject moduleData = new JObject();
+
+            string resourcesPath = Initializer.GetInitializer().ResourcePath + Path.DirectorySeparatorChar + Constants.FIELD_DETAILS_DIRECTORY;
+
+            if (!Directory.Exists(resourcesPath))
+            {
+                Directory.CreateDirectory(resourcesPath);
+            }
+
+            string recordFieldDetailsPath = GetFileName();
+
+            if (!System.IO.File.Exists(recordFieldDetailsPath) || (System.IO.File.Exists(recordFieldDetailsPath) && (!Initializer.GetJSON(recordFieldDetailsPath).ContainsKey(Constants.SDK_MODULE_METADATA) || (Initializer.GetJSON(recordFieldDetailsPath).GetValue(Constants.SDK_MODULE_METADATA) == null || ((JObject)Initializer.GetJSON(recordFieldDetailsPath).GetValue(Constants.SDK_MODULE_METADATA)).Count <= 0))))
+            {
+                moduleData = GetModules(null);
+
+                WriteModuleMetaData(recordFieldDetailsPath, moduleData);
+
+                return moduleData;
+            }
+
+            JObject recordFieldDetailsJson = Initializer.GetJSON(recordFieldDetailsPath);
+
+            return (JObject)recordFieldDetailsJson.GetValue(Constants.SDK_MODULE_METADATA);
+        }
+
+        private static void WriteModuleMetaData(string recordFieldDetailsPath, JObject moduleData)
+        {
+            JObject recordFieldDetailsJSON = System.IO.File.Exists(recordFieldDetailsPath) ? Initializer.GetJSON(recordFieldDetailsPath) : new JObject();
+
+            recordFieldDetailsJSON[Constants.SDK_MODULE_METADATA] = moduleData;
+
+            using (StreamWriter sw = System.IO.File.CreateText(recordFieldDetailsPath))
+            {
+                JsonSerializer serializer = new JsonSerializer();
+
+                serializer.Serialize(sw, recordFieldDetailsJSON);
+
+                sw.Flush();
+
+                sw.Close();
+            }
+        }
+
+        private static JObject GetModules(string header)
 	    {
-		    List<string> apiNames = new List<string>();
+		    JObject apiNames = new JObject();
 		
 		    HeaderMap headerMap = new HeaderMap();
 		
@@ -757,7 +928,13 @@ namespace Com.Zoho.Crm.API.Util
                         {
                             if (module.APISupported != null && (bool)module.APISupported)
                             {
-                                apiNames.Add(module.APIName);
+                                JObject moduleDetails = new JObject();
+
+                                moduleDetails.Add(Constants.API_NAME, module.APIName);
+
+                                moduleDetails.Add(Constants.GENERATED_TYPE, module.GeneratedType.Value);
+
+                                apiNames.Add(module.APIName.ToLower(), moduleDetails);
                             }
                         }
                     }
@@ -777,6 +954,25 @@ namespace Com.Zoho.Crm.API.Util
                     }
                 }
 		    }
+
+            if(header == null)
+            {
+                try
+                {
+                    string resourcesPath = Initializer.GetInitializer().ResourcePath + Path.DirectorySeparatorChar + Constants.FIELD_DETAILS_DIRECTORY;
+
+                    if (!Directory.Exists(resourcesPath))
+                    {
+                        Directory.CreateDirectory(resourcesPath);
+                    }
+
+                    WriteModuleMetaData(GetFileName(), apiNames);
+                }
+                catch (IOException ex)
+                {
+                    throw new SDKException(Constants.EXCEPTION, ex);
+                }
+            }
 		
 		    return apiNames;
 	    }
@@ -787,7 +983,7 @@ namespace Com.Zoho.Crm.API.Util
             {
                 forceRefresh = true;
 
-                GetFieldsInfo(null);
+                GetFieldsInfo(null, null);
 
                 forceRefresh = false;
             }
@@ -883,9 +1079,9 @@ namespace Com.Zoho.Crm.API.Util
                 return;
 
             }
-            else if(apiTypeVsdataType.ContainsKey(apiType))
+            else if(apiTypeVsDataType.ContainsKey(apiType))
             {
-                fieldDetail.Add(Constants.TYPE, apiTypeVsdataType[apiType]);
+                fieldDetail.Add(Constants.TYPE, apiTypeVsDataType[apiType]);
             }
             else if(apiType.Equals(Constants.FORMULA, StringComparison.OrdinalIgnoreCase))
             {
@@ -893,9 +1089,9 @@ namespace Com.Zoho.Crm.API.Util
                 {
                     string returnType = field.Formula.ReturnType;
                     
-                    if(apiTypeVsdataType.ContainsKey(returnType) && apiTypeVsdataType[returnType] != null)
+                    if(returnType != null && apiTypeVsDataType.ContainsKey(returnType) && apiTypeVsDataType[returnType] != null)
                     {
-                        fieldDetail.Add(Constants.TYPE, apiTypeVsdataType[returnType]);
+                        fieldDetail.Add(Constants.TYPE, apiTypeVsDataType[returnType]);
                     }
                 }
                 
@@ -966,7 +1162,7 @@ namespace Com.Zoho.Crm.API.Util
 
             if (module.Length > 0)
             {
-                Utility.GetFieldsInfo(module);
+                Utility.GetFieldsInfo(module, null);
             }
 
             fieldDetail.Add(Constants.NAME, keyName);
@@ -974,7 +1170,7 @@ namespace Com.Zoho.Crm.API.Util
 
         private static void FillDataType()
         {
-            if (apiTypeVsdataType.Count > 0)
+            if (apiTypeVsDataType.Count > 0)
             {
                 return;
             }
@@ -1021,122 +1217,122 @@ namespace Com.Zoho.Crm.API.Util
 
             foreach (string fieldAPIName in fieldAPINamesString)
             {
-                apiTypeVsdataType[fieldAPIName] = Constants.CSHARP_STRING_NAME;
+                apiTypeVsDataType[fieldAPIName] = Constants.CSHARP_STRING_NAME;
             }
 
             foreach (string fieldAPIName in fieldAPINamesInteger)
             {
-                apiTypeVsdataType[fieldAPIName] = Constants.CSHARP_INT_NAME;
+                apiTypeVsDataType[fieldAPIName] = Constants.CSHARP_INT_NAME;
             }
 
             foreach (string fieldAPIName in fieldAPINamesBoolean)
             {
-                apiTypeVsdataType[fieldAPIName] = Constants.CSHARP_BOOLEAN_NAME;
+                apiTypeVsDataType[fieldAPIName] = Constants.CSHARP_BOOLEAN_NAME;
             }
 
             foreach (string fieldAPIName in fieldAPINamesLong)
             {
-                apiTypeVsdataType[fieldAPIName] = Constants.CSHARP_LONG_NAME;
+                apiTypeVsDataType[fieldAPIName] = Constants.CSHARP_LONG_NAME;
             }
 
             foreach (string fieldAPIName in fieldAPINamesDouble)
             {
-                apiTypeVsdataType[fieldAPIName] = Constants.CSHARP_DOUBLE_NAME;
+                apiTypeVsDataType[fieldAPIName] = Constants.CSHARP_DOUBLE_NAME;
             }
 
             foreach (string fieldAPIName in fieldAPINamesFile)
             {
-                apiTypeVsdataType[fieldAPIName] = Constants.FILE_NAMESPACE;
+                apiTypeVsDataType[fieldAPIName] = Constants.FILE_NAMESPACE;
             }
 
             foreach (string fieldAPIName in fieldAPINamesDateTime)
             {
-                apiTypeVsdataType[fieldAPIName] = Constants.SYSTEM_DATETIME_OFFSET;
+                apiTypeVsDataType[fieldAPIName] = Constants.SYSTEM_DATETIME_OFFSET;
             }
 
             foreach (string fieldAPIName in fieldAPINamesDate)
             {
-                apiTypeVsdataType[fieldAPIName] = Constants.SYSTEM_DATETIME;
+                apiTypeVsDataType[fieldAPIName] = Constants.SYSTEM_DATETIME;
             }
 
             foreach (string fieldAPIName in fieldAPINamesLookup)
             {
-                apiTypeVsdataType[fieldAPIName] = Constants.RECORD_NAMESPACE;
+                apiTypeVsDataType[fieldAPIName] = Constants.RECORD_NAMESPACE;
 
                 apiTypeVsStructureName[fieldAPIName] = Constants.RECORD_NAMESPACE;
             }
 
             foreach (string fieldAPIName in fieldAPINamesPickList)
             {
-                apiTypeVsdataType[fieldAPIName] = Constants.CHOICE_NAMESPACE;
+                apiTypeVsDataType[fieldAPIName] = Constants.CHOICE_NAMESPACE;
             }
 
             foreach (string fieldAPIName in fieldAPINamesMultiSelectPickList)
             {
-                apiTypeVsdataType[fieldAPIName] = Constants.LIST_NAMESPACE;
+                apiTypeVsDataType[fieldAPIName] = Constants.LIST_NAMESPACE;
 
                 apiTypeVsStructureName[fieldAPIName] = Constants.CHOICE_NAMESPACE;
             }
 
             foreach (string fieldAPIName in fieldAPINamesSubForm)
             {
-                apiTypeVsdataType[fieldAPIName] = Constants.LIST_NAMESPACE;
+                apiTypeVsDataType[fieldAPIName] = Constants.LIST_NAMESPACE;
 
                 apiTypeVsStructureName[fieldAPIName] = Constants.RECORD_NAMESPACE;
             }
 
             foreach (string fieldAPIName in fieldAPINamesOwnerLookUp)
             {
-                apiTypeVsdataType[fieldAPIName] = Constants.USER_NAMESPACE;
+                apiTypeVsDataType[fieldAPIName] = Constants.USER_NAMESPACE;
 
                 apiTypeVsStructureName[fieldAPIName] = Constants.USER_NAMESPACE;
             }
 
             foreach (string fieldAPIName in fieldAPINamesMultiUserLookUp)
             {
-                apiTypeVsdataType[fieldAPIName] = Constants.LIST_NAMESPACE;
+                apiTypeVsDataType[fieldAPIName] = Constants.LIST_NAMESPACE;
 
                 apiTypeVsStructureName[fieldAPIName] = Constants.USER_NAMESPACE;
             }
 
             foreach (string fieldAPIName in fieldAPINamesMultiModuleLookUp)
             {
-                apiTypeVsdataType[fieldAPIName] = Constants.LIST_NAMESPACE;
+                apiTypeVsDataType[fieldAPIName] = Constants.LIST_NAMESPACE;
 
                 apiTypeVsStructureName[fieldAPIName] = Constants.MODULE_NAMESPACE;
             }
 
             foreach (string fieldAPIName in fieldAPINamesFieldFile)
             {
-                apiTypeVsdataType[fieldAPIName] = Constants.LIST_NAMESPACE;
+                apiTypeVsDataType[fieldAPIName] = Constants.LIST_NAMESPACE;
 
                 apiTypeVsStructureName[fieldAPIName] = Constants.FIELD_FILE_NAMESPACE;
             }
 
             foreach(string fieldAPIName in fieldAPINameTaskRemindAt)
             {
-                apiTypeVsdataType[fieldAPIName] = Constants.REMINDAT_NAMESPACE;
+                apiTypeVsDataType[fieldAPIName] = Constants.REMINDAT_NAMESPACE;
                 
                 apiTypeVsStructureName[fieldAPIName] = Constants.REMINDAT_NAMESPACE;
             }
             
             foreach(string fieldAPIName in fieldAPINameRecurringActivity)
             {
-                apiTypeVsdataType[fieldAPIName] = Constants.RECURRING_ACTIVITY_NAMESPACE;
+                apiTypeVsDataType[fieldAPIName] = Constants.RECURRING_ACTIVITY_NAMESPACE;
                 
                 apiTypeVsStructureName[fieldAPIName] = Constants.RECURRING_ACTIVITY_NAMESPACE;
             }
             
             foreach(string fieldAPIName in fieldAPINameReminder)
             {
-                apiTypeVsdataType[fieldAPIName] = Constants.LIST_NAMESPACE;
+                apiTypeVsDataType[fieldAPIName] = Constants.LIST_NAMESPACE;
                 
                 apiTypeVsStructureName[fieldAPIName] = Constants.REMINDER_NAMESPACE;
             }
 
             foreach (string fieldAPIName in fieldAPINameConsentLookUp)
             {
-                apiTypeVsdataType.Add(fieldAPIName, Constants.CONSENT_NAMESPACE);
+                apiTypeVsDataType.Add(fieldAPIName, Constants.CONSENT_NAMESPACE);
 
                 apiTypeVsStructureName.Add(fieldAPIName, Constants.CONSENT_NAMESPACE);
             }

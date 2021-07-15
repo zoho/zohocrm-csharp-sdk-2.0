@@ -18,6 +18,6 @@ namespace Com.Zoho.API.Authenticator
         /// The method to remove the current token from the Store.
         /// </summary>
         /// <returns></returns>
-        public bool Remove();
+        bool Remove();
     }
 }

@@ -44,7 +44,7 @@ namespace Com.Zoho.Crm.API
             {
                 throw new SDKException(Constants.PARAM_NAME_NULL_ERROR, Constants.PARAM_NAME_NULL_ERROR_MESSAGE);
             }
-            
+
             if(value == null)
             {
                 throw new SDKException(Constants.PARAMETER_NULL_ERROR, paramName + Constants.NULL_VALUE_ERROR_MESSAGE);
@@ -52,21 +52,21 @@ namespace Com.Zoho.Crm.API
 
             string paramValue = null;
 
+            string type = value.GetType().FullName;
+
             try
             {
-                string type = value.GetType().FullName;
-
                 Type dataTypeConverter = Type.GetType(Constants.DATATYPECONVERTER.Replace(Constants._TYPE, type));
 
                 MethodInfo method = dataTypeConverter.GetMethod(Constants.POST_CONVERT);
 
                 paramValue = Convert.ToString((method.Invoke(null, new object[] { value, type })));
             }
-            catch (Exception) 
+            catch (Exception)
             {
                 paramValue = value.ToString();
             }
-            
+
             if (ParameterMaps.ContainsKey(paramName) && ! string.IsNullOrEmpty(ParameterMaps[paramName]))
             {
                 string existingParamValue = ParameterMaps[paramName];

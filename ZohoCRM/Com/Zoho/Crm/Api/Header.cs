@@ -32,7 +32,7 @@ namespace Com.Zoho.Crm.API
         {
             get
             {
-                return name;
+                return this.name;
             }
         }
 

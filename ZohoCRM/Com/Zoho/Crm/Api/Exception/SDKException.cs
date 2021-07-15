@@ -26,6 +26,15 @@ namespace Com.Zoho.API.Exception
         /// <param name="cause">An Exception class instance.</param>
         public SDKException(string code, string message, System.Exception cause) : this(code: code, message: message, details: null, cause: cause) { }
 
+
+        /// <summary>
+        /// Creates an SDKException class instance with the specified parameters.
+        /// </summary>
+        /// <param name="code">A string containing the Exception error code.</param>
+        /// <param name="message">A string containing the Exception error message.</param>
+        /// <param name="details">A JSONObject containing the error response.</param>
+        public SDKException(string code, string message, JObject details) : this(code, message: message, details: details, cause: null) { }
+
         /// <summary>
         /// Creates an SDKException class instance with the specified parameters.
         /// </summary>

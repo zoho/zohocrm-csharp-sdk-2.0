@@ -42,7 +42,7 @@ namespace Com.Zoho.Crm.Sample.Notification
 
             List<string> events = new List<string>();
 
-            //events.Add("Deals.all");
+            events.Add("Deals.all");
 
             //To subscribe based on particular operations on given modules.
             notification.Events = events;
@@ -259,9 +259,9 @@ namespace Com.Zoho.Crm.Sample.Notification
 
 			ParameterMap paramInstance = new ParameterMap();
 
-			paramInstance.Add(GetNotificationDetailsParam.CHANNEL_ID, 1006800212);
+			paramInstance.Add(GetNotificationDetailsParam.CHANNEL_ID, 1006800211);
 
-			paramInstance.Add(GetNotificationDetailsParam.MODULE, "Leads");
+			paramInstance.Add(GetNotificationDetailsParam.MODULE, "Deals");
 
 			paramInstance.Add(GetNotificationDetailsParam.PAGE, 1);
 

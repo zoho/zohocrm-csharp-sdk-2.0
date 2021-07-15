@@ -116,6 +116,25 @@ namespace Com.Zoho.Crm.API.Util
                 }
 
                 check = varType.Equals(type, StringComparison.OrdinalIgnoreCase);
+
+                if(!check)
+                {
+                    Type minterface = valueType.GetInterface(type);
+
+                    if(minterface != null)
+                    {
+                        if (value is IList)
+                        {
+                            varType = minterface.Namespace + "." + minterface.Name;
+                        }
+                        else
+                        {
+                            varType = minterface.Namespace + "." + minterface.Name.Replace("`1", "");
+                        }
+
+                        check = varType.Equals(type, StringComparison.OrdinalIgnoreCase);
+                    }
+                }
             }
 
             if (value is IList)
@@ -143,7 +162,28 @@ namespace Com.Zoho.Crm.API.Util
                             className = dataType.Namespace + "." + dataType.Name.Replace("`1", "");
                         }
 
-                        if (!className.Equals(structureName, StringComparison.OrdinalIgnoreCase))
+                        check = className.Equals(structureName, StringComparison.OrdinalIgnoreCase);
+
+                        if (!check)
+                        {
+                            Type minterface = dataType.GetInterface(structureName);
+
+                            if (minterface != null)
+                            {
+                                if (data is IList)
+                                {
+                                    className = minterface.Namespace + "." + minterface.Name;
+                                }
+                                else
+                                {
+                                    className = minterface.Namespace + "." + minterface.Name.Replace("`1", "");
+                                }
+
+                                check = className.Equals(structureName, StringComparison.OrdinalIgnoreCase);
+                            }
+                        }
+
+                        if (!check)
                         {
                             instanceNumber = index;
 
@@ -152,8 +192,6 @@ namespace Com.Zoho.Crm.API.Util
                             varType = Constants.LIST_NAMESPACE + "(" + className + ")";
 
                             expectedListType = false;
-
-                            check = false;
 
                             break;
                         }
@@ -167,7 +205,6 @@ namespace Com.Zoho.Crm.API.Util
                     check = varType.Equals(type, StringComparison.OrdinalIgnoreCase) ? true : varType.Equals(Constants.LIST_NAMESPACE);
                 }
             }
-
             else if (value is IDictionary)
 		    {
                 check = varType.Equals(type) ? true : varType.Equals(Constants.MAP_NAMESPACE, StringComparison.OrdinalIgnoreCase);
@@ -210,7 +247,7 @@ namespace Com.Zoho.Crm.API.Util
                         detailsJO.Add(Constants.INDEX, instanceNumber);
                     }
 
-                    detailsJO.Add(Constants.GIVEN_VALUE, JsonConvert.SerializeObject(value));
+                    detailsJO.Add(Constants.GIVEN_VALUE, JToken.FromObject(value));
 
                     detailsJO.Add(Constants.ACCEPTED_VALUES, valuesJArray);
 

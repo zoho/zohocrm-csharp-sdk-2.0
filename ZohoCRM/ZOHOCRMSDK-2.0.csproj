@@ -17,7 +17,7 @@
 		</NuGetPackageImportStamp>
 		<NeutralLanguage>en-US</NeutralLanguage>
 		<PackageId>ZOHOCRMSDK-2.0</PackageId>
-		<PackageVersion>1.0.0</PackageVersion>
+		<PackageVersion>2.0.0</PackageVersion>
 		<Authors>Zoho CRM API Team</Authors>
 		<Owners>Zoho CRM API Team</Owners>
 		<Description>Provides C# SDK support for Zoho CRM APIs.</Description>
@@ -25,7 +25,9 @@
 		<Summary>C# SDK offers a way to create client C# applications that can be integrated with Zoho CRM. This SDK makes the access and use of necessary CRM APIs with ease.</Summary>
 		<PackageTags>ZOHOCRMSDK-2.0,ZCRMSDK,zohocrm,sdk,zcrmsdk,zoho</PackageTags>
 		<Title>ZOHOCRMSDK-2.0</Title>
-		<PackageReleaseNotes>Renamed package name for easy functioning between the APIs.</PackageReleaseNotes>
+		<PackageReleaseNotes>Restructuring of Configuration process to improve user-friendliness.
+Records API and Related Records API upgraded to support External ID feature.
+</PackageReleaseNotes>
   	</PropertyGroup>
   	<PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
 		<Optimize>true</Optimize>
@@ -47,11 +49,17 @@
 		<Compile Include="Com\Zoho\Crm\API\Currencies\ActionHandler.cs" />
 		<Compile Include="Com\Zoho\Crm\API\Currencies\Currency.cs" />
 		<Compile Include="Com\Zoho\Crm\API\Currencies\ResponseWrapper.cs" />
+		<Compile Include="Com\Zoho\Crm\API\ContactRoles\RecordBodyWrapper.cs" />
 		<Compile Include="Com\Zoho\Crm\API\Currencies\SuccessResponse.cs" />
+		<Compile Include="Com\Zoho\Crm\API\ContactRoles\RecordResponseHandler.cs" />
+		<Compile Include="Com\Zoho\Crm\API\ContactRoles\RecordActionWrapper.cs" />
+		<Compile Include="Com\Zoho\Crm\API\ContactRoles\ContactRoleWrapper.cs" />
+		<Compile Include="Com\Zoho\Crm\API\ContactRoles\RecordResponseWrapper.cs" />
 		<Compile Include="Com\Zoho\Crm\API\Currencies\ActionResponse.cs" />
 		<Compile Include="Com\Zoho\Crm\API\Currencies\BaseCurrencyWrapper.cs" />
 		<Compile Include="Com\Zoho\Crm\API\Currencies\ActionWrapper.cs" />
 		<Compile Include="Com\Zoho\Crm\API\Currencies\APIException.cs" />
+		<Compile Include="Com\Zoho\Crm\API\ContactRoles\RecordActionHandler.cs" />
 		<Compile Include="Com\Zoho\Crm\API\Currencies\BaseCurrencyActionHandler.cs" />
 		<Compile Include="Com\Zoho\Crm\API\Currencies\CurrenciesOperations.cs" />
 		<Compile Include="Com\Zoho\Crm\API\Currencies\BodyWrapper.cs" />

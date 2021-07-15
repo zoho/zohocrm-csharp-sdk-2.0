@@ -5,7 +5,7 @@ using Com.Zoho.API.Exception;
 namespace Com.Zoho.Crm.API.Util
 {
     /// <summary>
-    /// This class handles the file stream and name. 
+    /// This class handles the file stream and name.
     /// </summary>
     public class StreamWrapper : Model
     {

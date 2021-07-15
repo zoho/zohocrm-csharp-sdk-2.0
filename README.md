@@ -56,7 +56,7 @@ You can include the SDK to your project using:
     - Package Manager
 
         ```sh
-        Install-Package ZOHOCRMSDK-2.0 -Version 1.0.0
+        Install-Package ZOHOCRMSDK-2.0 -Version 2.0.0
         Install-Package MySql.Data -Version 6.9.12
         Install-Package Newtonsoft.Json -Version 11.0.1
         ```
@@ -64,7 +64,7 @@ You can include the SDK to your project using:
     - .NET  CLI
 
         ```sh
-        dotnet add package ZOHOCRMSDK-2.0 --version 1.0.0
+        dotnet add package ZOHOCRMSDK-2.0 --version 2.0.0
         dotnet add package Newtonsoft.Json --version 11.0.1
         dotnet add package MySql.Data --version 6.9.12
         ```
@@ -75,7 +75,7 @@ You can include the SDK to your project using:
 
         ```sh
         <ItemGroup>
-            <PackageReference Include="ZOHOCRMSDK-2.0" Version="1.0.0" />
+            <PackageReference Include="ZOHOCRMSDK-2.0" Version="2.0.0" />
             <PackageReference Include="Newtonsoft.Json" Version="11.0.1" />
             <PackageReference Include="MySql.Data" Version="6.9.12" />
         </ItemGroup>
@@ -101,17 +101,19 @@ Token persistence refers to storing and utilizing the authentication tokens that
 
 Once the application is authorized, OAuth access and refresh tokens can be used for subsequent user data requests to Zoho CRM. Hence, they need to be persisted by the client app.
 
-The persistence is achieved by writing an implementation of the inbuilt **[TokenStore](ZohoCRM/Com/Zoho/API/Authenticator/Store/TokenStore.cs) interface**, which has the following callback methods.
+The persistence is achieved by writing an implementation of the inbuilt **TokenStore interface**, which has the following callback methods.
 
-- **GetToken([UserSignature](Resources/UserSignature.md#usersignature) user, [Token](ZohoCRM/Com/Zoho/API/Authenticator/Token.cs) token)** - invoked before firing a request to fetch the saved tokens. This method should return an implementation of **Token interface** object for the library to process it.
+- **GetToken(UserSignature user, Token token)** - invoked before firing a request to fetch the saved tokens. This method should return an implementation of **Token interface** object for the library to process it.
 
-- **SaveToken([UserSignature](Resources/UserSignature.md#usersignature) user, [Token](ZohoCRM/Com/Zoho/API/Authenticator/Token.cs) token)** - invoked after fetching access and refresh tokens from Zoho.
+- **SaveToken(UserSignature user, Token token)** - invoked after fetching access and refresh tokens from Zoho.
 
-- **DeleteToken([Token](ZohoCRM/Com/Zoho/API/Authenticator/Token.cs) token)** - invoked before saving the latest tokens.
+- **DeleteToken(Token token)** - invoked before saving the latest tokens.
 
 - **GetTokens()** - The method to retrieve all the stored tokens.
 
 - **DeleteTokens()** - The method to delete all the stored tokens.
+
+- **GetTokenById(string id, Token token)** - This method is used to retrieve the user token details based on unique ID.
 
 ### DataBase Persistence
 
@@ -119,13 +121,15 @@ In case the user prefers to use the default DataBase persistence, **MySQL** can 
 
 - The database name should be **zohooauth**.
 
-- There must be a table named **oauthtoken** with the following columns.
+- There must be a table name **oauthtoken** with columns.
 
-  - id int(11)
+  - id varchar(255)
 
   - user_mail varchar(255)
 
   - client_id varchar(255)
+
+  - client_secret varchar(255)
 
   - refresh_token varchar(255)
 
@@ -135,38 +139,65 @@ In case the user prefers to use the default DataBase persistence, **MySQL** can 
 
   - expiry_time varchar(20)
 
+  - redirect_url varchar(255)
+
+Note:
+- Custom database name and table name can be set in DBStore instance
+
 #### MySQL Query
 
 ```sql
-create table oauthtoken(id int(11) not null auto_increment, user_mail varchar(255) not null, client_id varchar(255), refresh_token varchar(255), access_token varchar(255), grant_token varchar(255), expiry_time varchar(20), primary key (id));
-
-alter table oauthtoken auto_increment = 1;
+CREATE TABLE oauthtoken (
+  id varchar(255) NOT NULL,
+  user_mail varchar(255) NOT NULL,
+  client_id varchar(255),
+  client_secret varchar(255),
+  refresh_token varchar(255),
+  access_token varchar(255),
+  grant_token varchar(255),
+  expiry_time varchar(20),
+  redirect_url varchar(255),
+  primary key (id)
+);
 ```
 
 #### Create DBStore object
 
 ```C#
 /*
-* 1 -> DataBase host name. Default value "localhost"
-* 2 -> DataBase name. Default  value "zohooauth"
-* 3 -> DataBase user name. Default value "root"
-* 4 -> DataBase password. Default value ""
-* 5 -> DataBase port number. Default value "3306"
+* Create an instance of DBStore.
+* Host -> DataBase host name. Default "localhost"
+* DatabaseName -> DataBase name. Default "zohooauth"
+* UserName -> DataBase user name. Default "root"
+* Password -> DataBase password. Default ""
+* PortNumber -> DataBase port number. Default "3306"
+* TableName -> Table Name. Default value "oauthtoken"
 */
-TokenStore tokenstore = new DBStore();
+//TokenStore tokenstore = new DBStore.Builder().Build();
 //TokenStore interface
-TokenStore tokenstore = new DBStore("hostName", "dataBaseName", "userName", "password", "portNumber");
+TokenStore tokenstore = new DBStore.Builder()
+.Host("hostName")
+.DatabaseName("dataBaseName")
+.TableName("tableName")
+.UserName("userName")
+.Password("password")
+.PortNumber("portNumber")
+.Build();
 ```
 
 ### File Persistence
 
 In case of default File Persistence, the user can persist tokens in the local drive, by providing the the absolute file path to the FileStore object.
 
-- The File contains.
+- The File contains
+
+  - id
 
   - user_mail
 
   - client_id
+
+  - client_secret
 
   - refresh_token
 
@@ -175,6 +206,8 @@ In case of default File Persistence, the user can persist tokens in the local dr
   - grant_token
 
   - expiry_time
+
+  - redirect_url
 
 #### Create FileStore object
 
@@ -222,7 +255,7 @@ namespace user.store
         /// <summary></summary>
         /// <param name="user">A UserSignature class instance.</param>
         /// <param name="token">A Token (Com.Zoho.API.Authenticator.OAuthToken) class instance.</param>
-        public void DeleteToken(UserSignature user, Token token)
+        public void DeleteToken(Token token)
         {
             // Add code to delete the token
         }
@@ -236,26 +269,42 @@ namespace user.store
         {
             // Add code to delete the all stored token
         }
+
+        /// <summary>
+        /// This method is used to retrieve the user token details based on unique ID
+        /// </summary>
+        /// <param name="id">A String representing the unique ID</param>
+        /// <param name="token">A Token class instance representing the user token details.</param>
+        /// <returns>A Token class instance representing the user token details.</returns>
+        ///
+        Token GetTokenById(string id, Token token)
+        {
+            // Add code to get the token using unique id
+            return null;
+        }
     }
 }
 ```
 
 ## Configuration
 
-Before you get started with creating your C# application, you need to register your client and authenticate the app with Zoho.
+Before you get started with creating your PHP application, you need to register your client and authenticate the app with Zoho.
 
-- Create an instance of **[Logger](Resources/Logger/Logger.md#logger)** Class to log exception and API information.
+- Create an instance of **Logger** Class to log exception and API information.
 
     ```C#
     /*
-        * Create an instance of Logger Class that takes two parameters
-        * 1 -> Level of the log messages to be logged. Can be configured by typing Levels "." and choose any level from the list displayed.
-        * 2 -> Absolute file path, where messages need to be logged.
+    * Create an instance of Logger Class that requires the following
+    * Level -> Level of the log messages to be logged. Can be configured by typing Levels "." and choose any level from the list displayed.
+    * FilePath -> Absolute file path, where messages need to be logged.
     */
-    Logger logger = Logger.GetInstance(Logger.Levels.ALL, "/Users/Documents/csharp_sdk_log.log");
+    Logger logger = new Logger.Builder()
+    .Level(Logger.Levels.ALL)
+    .FilePath("/Users/Documents/csharp_sdk_log.log")
+    .Build();
     ```
 
-- Create an instance of **[UserSignature](Resources/UserSignature.md#usersignature)** that identifies the current user.
+- Create an instance of **UserSignature** that identifies the current user.
 
     ```C#
     //Create an UserSignature instance that takes user Email as parameter
@@ -274,66 +323,109 @@ Before you get started with creating your C# application, you need to register y
     Environment environment = USDataCenter.PRODUCTION;
     ```
 
-- Create an instance of **[OAuthToken](Resources/OAuthToken.md)** with the information that you get after registering your Zoho client.
+- Create an instance of **OAuthToken** with the information  that you get after registering your Zoho client.
 
     ```C#
     /*
-        * Create a Token instance
-        * 1 -> OAuth client id.
-        * 2 -> OAuth client secret.
-        * 3 -> REFRESH/GRANT token.
-        * 4 -> Token type(REFRESH/GRANT).
-        * 5 -> OAuth redirect URL.
+    * Create a Token instance that requires the following
+    * clientId -> OAuth client id.
+    * clientSecret -> OAuth client secret.
+    * refreshToken -> REFRESH token.
+    * grantToken -> GRANT token.
+    * id -> User unique id.
+    * redirectURL -> OAuth redirect URL.
     */
-    Token token = new OAuthToken("clientId", "clientSecret", "REFRESH/GRANT token", TokenType.REFRESH/GRANT, "redirectURL");
+    //Create a Token instance
+    // if refresh token is available
+    // The SDK throws an exception, if the given id is invalid.
+    Token token = new OAuthToken.Builder()
+    .Id("id")
+    .Build();
+
+    // if grant token is available
+    Token token = new OAuthToken.Builder()
+    .ClientId("clientId")
+    .ClientSecret("clientSecret")
+    .GrantToken("grantToken")
+    .RedirectURL("redirectURL")
+    .Build();
+
+    // if ID (obtained from persistence) is available
+    Token token = new OAuthToken.Builder()
+    .ClientId("clientId")
+    .ClientSecret("clientSecret")
+    .RefreshToken("refreshToken")
+    .RedirectURL("redirectURL")
+    .Build();
     ```
 
-- Create an instance of **[TokenStore](ZohoCRM/Com/Zoho/API/Authenticator/Store/TokenStore.cs)** to persist tokens that are  used for authenticating all the requests.
+- Create an instance of **TokenStore** to persist tokens, used for authenticating all the requests.
 
     ```C#
     /*
-        * Create an instance of TokenStore.
-        * 1 -> DataBase host name. Default "localhost"
-        * 2 -> DataBase name. Default "zohooauth"
-        * 3 -> DataBase user name. Default "root"
-        * 4 -> DataBase password. Default ""
-        * 5 -> DataBase port number. Default "3306"
+    * Create an instance of DBStore.
+    * Host -> DataBase host name. Default "localhost"
+    * DatabaseName -> DataBase name. Default "zohooauth"
+    * UserName -> DataBase user name. Default "root"
+    * Password -> DataBase password. Default ""
+    * PortNumber -> DataBase port number. Default "3306"
+    * TableName -> Table Name. Default value "oauthtoken"
     */
-    //TokenStore tokenstore = new DBStore();
+    //TokenStore tokenstore = new DBStore.Builder().Build();
 
-    TokenStore tokenstore = new DBStore("hostName", "dataBaseName", "userName", "password", "portNumber");
+    TokenStore tokenstore = new DBStore.Builder()
+    .Host("hostName")
+    .DatabaseName("dataBaseName")
+    .TableName("tableName")
+    .UserName("userName")
+    .Password("password")
+    .PortNumber("portNumber")
+    .Build();
 
     //TokenStore tokenstore = new FileStore("absolute_file_path");  
 
     //TokenStore tokenStore = new CustomStore();
     ```
 
-- Create an instance of **[SDKConfig](Resources/SDKConfig.md)** containing the SDK configuration.
+- Create an instance of **SDKConfig** containing SDK configurations.
 
     ```C#
     /*
     * autoRefreshFields
     * if true - all the modules' fields will be auto-refreshed in the background, every    hour.
-    * if false - the fields will not be auto-refreshed in the background. The user can manually delete the file(s) or refresh the fields using methods from ModuleFieldsHandler(Com.Zoho.Crm.API.Util.ModuleFieldsHandler)
-    *
+    * if false - the fields will not be auto-refreshed in the background. The user can manually delete the file(s) or refresh the fields using methods from ModuleFieldsHandler(com.zoho.crm.api.util.ModuleFieldsHandler)
+    * 
     * pickListValidation
-    * A boolean field that validates user input for a pick list field and allows or disallows the addition of a new value to the list.
-    * True - the SDK validates the input. If the value does not exist in the pick list, the SDK throws an error.
-    * False - the SDK does not validate the input and makes the API request with the user’s input to the pick list
+    * if true - value for any picklist field will be validated with the available values.
+    * if false - value for any picklist field will not be validated, resulting in creation of a new value.
     */
-    SDKConfig config = new SDKConfig.Builder().SetAutoRefreshFields(false).SetPickListValidation(true).Build();
+    SDKConfig config = new SDKConfig.Builder().AutoRefreshFields(false).PickListValidation(false).Build();
     ```
 
-- The path containing the absolute directory path to store user-specific files containing module fields information.
+- Create an instance of **RequestProxy** containing the proxy properties of the user.
+
+    ```C#
+    /**
+    * Create an instance of RequestProxy class that takes the following parameters
+    * Host -> Host
+    * Port -> Port Number
+    * User -> User Name
+    * Password -> Password
+    * UserDomain -> User Domain
+    */
+    RequestProxy requestProxy = new RequestProxy.Builder()
+    .Host("proxyHost")
+    .Port(proxyPort)
+    .User("proxyUser")
+    .Password("password")
+    .UserDomain("userDomain")
+    .Build();
+    ```
+
+- The path containing the absolute directory path to store user specific files containing module fields information.
 
     ```C#
     string resourcePath = "/Users/user_name/Documents/csharpsdk-application";
-    ```
-
-- Create an instance of **[RequestProxy](resources/RequestProxy.md)** containing the proxy properties of the user.
-
-    ```C#
-    RequestProxy RequestProxy = new RequestProxy("proxyHost", "proxyPort", "proxyUser", "password", "userDomain");
     ```
 
 ## Initializing the Application
@@ -358,11 +450,14 @@ namespace Com.Zoho.Crm.Sample.Initializer
         public static void SDKInitialize()
         {
             /*
-            * Create an instance of Logger Class that takes two parameters
-            * 1 -> Level of the log messages to be logged. Can be configured by typing Levels "." and choose any level from the list displayed.
-            * 2 -> Absolute file path, where messages need to be logged.
+            * Create an instance of Logger Class that requires the following
+            * Level -> Level of the log messages to be logged. Can be configured by typing Levels "." and choose any level from the list displayed.
+            * FilePath -> Absolute file path, where messages need to be logged.
             */
-            Logger logger = Logger.GetInstance(Logger.Levels.ALL, "/Users/Documents/csharp_sdk_log.log");
+            Logger logger = new Logger.Builder()
+            .Level(Logger.Levels.ALL)
+            .FilePath("/Users/Documents/csharp_sdk_log.log")
+            .Build();
 
             //Create an UserSignature instance that takes user Email as parameter
             UserSignature user = new UserSignature("abc@zoho.com");
@@ -376,26 +471,41 @@ namespace Com.Zoho.Crm.Sample.Initializer
             Environment environment = USDataCenter.PRODUCTION;
 
             /*
-            * Create a Token instance
-            * 1 -> OAuth client id.
-            * 2 -> OAuth client secret.
-            * 3 -> REFRESH/GRANT token.
-            * 4 -> Token type(REFRESH/GRANT).
-            * 5 -> OAuth redirect URL.
+            * Create a Token instance that requires the following
+            * clientId -> OAuth client id.
+            * clientSecret -> OAuth client secret.
+            * refreshToken -> REFRESH token.
+            * grantToken -> GRANT token.
+            * id -> User unique id.
+            * redirectURL -> OAuth redirect URL.
             */
-            Token token = new OAuthToken("clientId", "clientSecret", "REFRESH/GRANT token", TokenType.REFRESH/GRANT, "redirectURL");
+            // if ID (obtained from persistence) is available
+            Token token = new OAuthToken.Builder()
+            .ClientId("clientId")
+            .ClientSecret("clientSecret")
+            .RefreshToken("refreshToken")
+            .RedirectURL("redirectURL")
+            .Build();
 
             /*
-                * Create an instance of TokenStore.
-                * 1 -> DataBase host name. Default "localhost"
-                * 2 -> DataBase name. Default "zohooauth"
-                * 3 -> DataBase user name. Default "root"
-                * 4 -> DataBase password. Default ""
-                * 5 -> DataBase port number. Default "3306"
+            * Create an instance of DBStore.
+            * Host -> DataBase host name. Default "localhost"
+            * DatabaseName -> DataBase name. Default "zohooauth"
+            * UserName -> DataBase user name. Default "root"
+            * Password -> DataBase password. Default ""
+            * PortNumber -> DataBase port number. Default "3306"
+            * TableName -> Table Name. Default value "oauthtoken"
             */
-            //TokenStore tokenstore = new DBStore();
+            //TokenStore tokenstore = new DBStore.Builder().Build();
 
-            TokenStore tokenstore = new DBStore("hostName", "dataBaseName", "userName", "password", "portNumber");
+            TokenStore tokenstore = new DBStore.Builder()
+            .Host("hostName")
+            .DatabaseName("dataBaseName")
+            .TableName("tableName")
+            .UserName("userName")
+            .Password("password")
+            .PortNumber("portNumber")
+            .Build();
 
             // TokenStore tokenstore = new FileStore("absolute_file_path");
 
@@ -403,48 +513,54 @@ namespace Com.Zoho.Crm.Sample.Initializer
             * autoRefreshFields
             * if true - all the modules' fields will be auto-refreshed in the background, every    hour.
             * if false - the fields will not be auto-refreshed in the background. The user can manually delete the file(s) or refresh the fields using methods from ModuleFieldsHandler(com.zoho.crm.api.util.ModuleFieldsHandler)
-            *
+            * 
             * pickListValidation
             * if true - value for any picklist field will be validated with the available values.
             * if false - value for any picklist field will not be validated, resulting in creation of a new value.
             */
-            SDKConfig sdkConfig = new SDKConfig.Builder().SetAutoRefreshFields(false).SetPickListValidation(true).Build();
+            SDKConfig config = new SDKConfig.Builder().AutoRefreshFields(false).PickListValidation(false).Build();
 
             string resourcePath = "/Users/user_name/Documents/csharpsdk-application";
 
             /**
             * Create an instance of RequestProxy class that takes the following parameters
-            * 1 -> Host
-            * 2 -> Port Number
-            * 3 -> User Name
-            * 4 -> Password
-            * 5 -> User Domain
+            * Host -> Host
+            * Port -> Port Number
+            * User -> User Name
+            * Password -> Password
+            * UserDomain -> User Domain
             */
-            // RequestProxy requestProxy = new RequestProxy("proxyHost", "proxyPort", "proxyUser", "password");
-
-            RequestProxy requestProxy = new RequestProxy("proxyHost", "proxyPort", "proxyUser", "password", "userDomain");
+            RequestProxy requestProxy = new RequestProxy.Builder()
+            .Host("proxyHost")
+            .Port(proxyPort)
+            .User("proxyUser")
+            .Password("password")
+            .UserDomain("userDomain")
+            .Build();
 
             /*
             * The initialize method of Initializer class that takes the following arguments
-            * 1 -> UserSignature instance
-            * 2 -> Environment instance
-            * 3 -> Token instance
-            * 4 -> TokenStore instance
-            * 5 -> SDKConfig instance
-            * 6 -> resourcePath -A String
-            * 7 -> Logger instance
-            * 8 -> RequestProxy instance
+            * User -> UserSignature instance
+            * Environment -> Environment instance
+            * Token -> Token instance
+            * Store -> TokenStore instance
+            * SDKConfig -> SDKConfig instance
+            * ResourcePath -> resourcePath -A String
+            * Logger -> Logger instance
+            * RequestProxy -> RequestProxy instance
             */
 
-            // The following are the available initialize methods
-
-            SDKInitializer.Initialize(user, environment, token, tokenstore, sdkConfig, resourcePath);
-
-            SDKInitializer.Initialize(user, environment, token, tokenstore, sdkConfig, resourcePath, logger);
-
-            SDKInitializer.Initialize(user, environment, token, tokenstore, sdkConfig, resourcePath, requestProxy);
-
-            SDKInitializer.Initialize(user, environment, token, tokenstore, sdkConfig, resourcePath, logger, requestProxy);
+			// Set the following in InitializeBuilder
+			new SDKInitializer.Builder()
+			.User(user)
+			.Environment(environment)
+			.Token(token)
+			.Store(tokenstore)
+			.SDKConfig(config)
+			.ResourcePath(resourcePath)
+			.Logger(logger)
+			//.RequestProxy(requestProxy)
+			.Initialize();
         }
     }
 }
@@ -458,15 +574,15 @@ namespace Com.Zoho.Crm.Sample.Initializer
 
 ## Responses and Exceptions
 
-All SDK method calls return an instance of the **[APIResponse](Resources/Util/APIResponse.md#apiresponse)** class
+All SDK method calls return an instance of the **APIResponse** class
 
-Use the **Object** Property in the returned **[APIResponse](Resources/Util/APIResponse.md#apiresponse)** object to obtain the response handler interface depending on the type of request (**GET, POST,PUT,DELETE**).
+Use the **Object** Property in the returned **APIResponse** object to obtain the response handler interface depending on the type of request (**GET, POST,PUT,DELETE**).
 
 **APIResponse&lt;ResponseHandler&gt;** and **APIResponse&lt;ActionHandler&gt;** are the common wrapper objects for Zoho CRM APIs’ responses.
 
 Whenever the API returns an error response, the response will be an instance of **APIException** class.
 
-All other exceptions such as SDK anomalies and other unexpected behaviours are thrown under the **[SDKException](Resources/Exception/SDKException.md#sdkexception)** class.
+All other exceptions such as SDK anomalies and other unexpected behaviours are thrown under the **SDKException** class.
 
 - For operations involving records in Tags
   - **APIResponse&lt;RecordActionHandler&gt;**
@@ -560,15 +676,19 @@ All other exceptions such as SDK anomalies and other unexpected behaviours are t
 
 Threads in a C# program help you achieve parallelism. By using multiple threads, you can make a C# program run faster and do multiple things simultaneously.
 
-The **C# SDK** (from version 3.x.x) supports both single threading and multi-threading irrespective of a single user or a multi-user app.
+The **C# SDK** supports both single threading and multi-threading irrespective of a single user or a multi-user app.
 
 ### Multithreading in a Multi-User App
 
 Multi-threading for multi-users is achieved using Initializer's static **SwitchUser()**.
 
 ```C#
-Initializer.SwitchUser(UserSignature user, Environment environment, Token token, SDKConfig sdkConfig);
-Initializer.SwitchUser(UserSignature user, Environment environment, Token token, SDKConfig sdkConfig, RequestProxy proxy);
+new SDKInitializer.Builder()
+.User(user)
+.Environment(environment)
+.Token(token)
+.SDKConfig(config)
+.SwitchUser();
 ```
 
 Here is a sample code to depict multi-threading for a multi-user app.
@@ -590,8 +710,12 @@ using SDKInitializer = Com.Zoho.Crm.API.Initializer;
 
 namespace Com.Zoho.Crm.Sample.Threading.MultiUser
 {
+    /// <summary>
+    /// 
+    /// </summary>
     public class MultiThread
     {
+
         DataCenter.Environment environment;
 
         UserSignature user;
@@ -611,29 +735,49 @@ namespace Com.Zoho.Crm.Sample.Threading.MultiUser
             this.moduleAPIName = moduleAPIName;
         }
 
-        static void Main(string[] args)
+        public static void RunMultiThreadWithMultiUser()
         {
-            Logger logger = Logger.GetInstance(Logger.Levels.ALL, "/Users/user_name/Documents/csharp_sdk_log.log");
+            Logger logger = new Logger.Builder()
+                .Level(Logger.Levels.ALL)
+                .FilePath("/Users/user_name/Documents/csharp_sdk_log.log")
+                .Build();
 
             DataCenter.Environment environment1 = USDataCenter.PRODUCTION;
 
-            UserSignature user1 = new UserSignature("user1@zoho.com");
+            UserSignature user1 = new UserSignature("abc@zoho.com");
 
             TokenStore tokenstore = new FileStore("/Users/user_name/Documents/csharp_sdk_token.txt");
 
-            Token token1 = new OAuthToken("clientId1", "clientSecret1", "REFRESH/GRANT token", TokenType.REFRESH/GRANT, "redirectURL1");
+            Token token1 = new OAuthToken.Builder()
+                .ClientId("clientId")
+                .ClientSecret("clientSecret")
+                .RefreshToken("refreshToken")
+                .RedirectURL("redirectURL")
+                .Build();
 
-            string resourcePath = "/Users/user_name/Documents/csharpsdk-application";
+            string resourcePath = "/Users/user_name/Documents/";
 
-            SDKConfig config = new SDKConfig.Builder().SetAutoRefreshFields(true).Build();
+            DataCenter.Environment environment2 = USDataCenter.PRODUCTION;
 
-            DataCenter.Environment environment2 = EUDataCenter.PRODUCTION;
+            UserSignature user2 = new UserSignature("abc1@zoho.com");
 
-            UserSignature user2 = new UserSignature("user2@zoho.eu");
+            Token token2 = new OAuthToken.Builder()
+                .ClientId("clientId")
+                .ClientSecret("clientSecret")
+                .RefreshToken("refreshToken")
+                .Build();
 
-            Token token2 = new OAuthToken("clientId2", "clientSecret2", "REFRESH/GRANT token", TokenType.REFRESH/GRANT, "redirectURL2");
+            SDKConfig config = new SDKConfig.Builder().AutoRefreshFields(true).Build();
 
-            SDKInitializer.Initialize(user1, environment1, token1, tokenstore, config, resourcePath, logger);
+            new SDKInitializer.Builder()
+               .User(user1)
+               .Environment(environment1)
+               .Token(token1)
+               .Store(tokenstore)
+               .SDKConfig(config)
+               .ResourcePath(resourcePath)
+               .Logger(logger)
+               .Initialize();
 
             MultiThread multiThread1 = new MultiThread(user1, environment1, token1, "Vendors");
 
@@ -656,11 +800,16 @@ namespace Com.Zoho.Crm.Sample.Threading.MultiUser
         {
             try
             {
-                SDKConfig config = new SDKConfig.Builder().SetAutoRefreshFields(true).Build();
+                SDKConfig config = new SDKConfig.Builder().AutoRefreshFields(true).Build();
 
-                SDKInitializer.SwitchUser(this.user, this.environment, this.token, config);
+                new SDKInitializer.Builder()
+               .User(this.user)
+               .Environment(this.environment)
+               .Token(this.token)
+               .SDKConfig(config)
+               .SwitchUser();
 
-                Console.WriteLine("Fetching records for user - " + SDKInitializer.GetInitializer().User.Email);
+                Console.WriteLine("Fetching Cr's for user - " + SDKInitializer.GetInitializer().User.Email);
 
                 RecordOperations recordOperation = new RecordOperations();
 
@@ -762,55 +911,76 @@ using Newtonsoft.Json;
 using static Com.Zoho.API.Authenticator.OAuthToken;
 using SDKInitializer = Com.Zoho.Crm.API.Initializer;
 
-namespace Com.Zoho.Crm.Sample.Threading.SingleUser
+namespace Com.Zoho.Crm.Sample.Threading.MultiUser
 {
-    /// <summary>
-    ///
-    /// </summary>
-    public class MultiThread
+    public class SingleThread
     {
-        static void Main(string[] args)
+        public static void RunSingleThreadWithMultiUser()
         {
-            Logger logger = Logger.GetInstance(Logger.Levels.ALL, "/Users/user_name/Documents/csharp_sdk_log.log");
-
+            Logger logger = new Logger.Builder()
+                .Level(Logger.Levels.ALL)
+                .FilePath("/Users/user_name/Documents/csharp_sdk_log.log")
+                .Build();
+            
             DataCenter.Environment env = USDataCenter.PRODUCTION;
 
-            UserSignature user = new UserSignature("user1@zoho.com");
+            UserSignature user1 = new UserSignature("abc@zoho.com");
 
             TokenStore tokenstore = new FileStore("/Users/user_name/Documents/csharp_sdk_token.txt");
 
-            Token token = new OAuthToken("clientId", "clientSecret", "REFRESH/GRANT token", TokenType.REFRESH/GRANT);
+             Token token1 = new OAuthToken.Builder()
+                .ClientId("clientId")
+                .ClientSecret("clientSecret")
+                .RefreshToken("refreshToken")
+                .RedirectURL("redirectURL")
+                .Build();
 
-            string resourcePath = "/Users/user_name/Documents/csharpsdk-application";
+            string resourcePath = "/Users/user_name/Documents/";
 
-            SDKConfig config = new SDKConfig.Builder().SetAutoRefreshFields(true).Build();
+            DataCenter.Environment environment = USDataCenter.PRODUCTION;
 
-            SDKInitializer.Initialize(user, env, token, tokenstore, config, resourcePath, logger);
+            UserSignature user2 = new UserSignature("abc1@zoho.com");
+            
+            Token token2 = new OAuthToken.Builder()
+                .ClientId("clientId")
+                .ClientSecret("clientSecret")
+                .RefreshToken("refreshToken")
+                .Build();
 
-            MultiThread multiThread1 = new MultiThread();
+            SDKConfig config = new SDKConfig.Builder().AutoRefreshFields(true).Build();
 
-            Thread thread1 = new Thread(() => multiThread1.GetRecords("Quotes"));
+            new SDKInitializer.Builder()
+            .User(user1)
+            .Environment(environment)
+            .Token(token1)
+            .Store(tokenstore)
+            .SDKConfig(config)
+            .ResourcePath(resourcePath)
+            .Logger(logger)
+            .Initialize();
 
-            thread1.Start();
+            new SingleThread().GetRecords("Leads");
 
-            Thread thread2 = new Thread(() => multiThread1.GetContactRoles());
+            new SDKInitializer.Builder()
+            .User(user2)
+            .Environment(environment)
+            .Token(token2)
+            .SDKConfig(config)
+            .SwitchUser();
 
-            thread2.Start();
+            new SingleThread().GetRecords("Quotes");
 
-            thread1.Join();
-
-            thread2.Join();
         }
 
         public void GetRecords(string moduleAPIName)
         {
             try
             {
-                Console.WriteLine("Fetching records for user - " + SDKInitializer.GetInitializer().User.Email);
+                Console.WriteLine("Fetching Cr's for user - " + SDKInitializer.GetInitializer().User.Email);
 
                 RecordOperations recordOperation = new RecordOperations();
 
-                APIResponse<API.Record.ResponseHandler> response = recordOperation.GetRecords(moduleAPIName, null, null);
+                APIResponse<ResponseHandler> response = recordOperation.GetRecords(moduleAPIName, null, null);
 
                 if (response != null)
                 {
@@ -828,12 +998,12 @@ namespace Com.Zoho.Crm.Sample.Threading.SingleUser
                     if (response.IsExpected)
                     {
                         //Get object from response
-                        API.Record.ResponseHandler responseHandler = response.Object;
+                        ResponseHandler responseHandler = response.Object;
 
-                        if (responseHandler is API.Record.ResponseWrapper)
+                        if (responseHandler is ResponseWrapper)
                         {
                             //Get the received ResponseWrapper instance
-                            API.Record.ResponseWrapper responseWrapper = (API.Record.ResponseWrapper)responseHandler;
+                            ResponseWrapper responseWrapper = (ResponseWrapper)responseHandler;
 
                             //Get the list of obtained Record instances
                             List<API.Record.Record> records = responseWrapper.Data;
@@ -844,7 +1014,7 @@ namespace Com.Zoho.Crm.Sample.Threading.SingleUser
                             }
                         }
                         //Check if the request returned an exception
-                        else if (responseHandler is API.Record.APIException)
+                        else if (responseHandler is APIException)
                         {
                             //Get the received APIException instance
                             APIException exception = (APIException)responseHandler;
@@ -877,6 +1047,7 @@ namespace Com.Zoho.Crm.Sample.Threading.SingleUser
         }
     }
 }
+
 ```
 
 - The program execution starts from **Main()** where the SDK is initialized with the details of user and an instance of **MultiThread class** is created .
@@ -914,11 +1085,14 @@ namespace TestAutomatedSDK
         public static void Main(string[] args)
         {
             /*
-             * Create an instance of Logger Class that takes two parameters
-             * 1 -> Level of the log messages to be logged. Can be configured by typing Levels "." and choose any level from the list displayed.
-             * 2 -> Absolute file path, where messages need to be logged.
-             */
-            Logger logger = Logger.GetInstance(Logger.Levels.ALL, "/Users/username/Documents/csharp_sdk_log.log");
+            * Create an instance of Logger Class that requires the following
+            * Level -> Level of the log messages to be logged. Can be configured by typing Levels "." and choose any level from the list displayed.
+            * FilePath -> Absolute file path, where messages need to be logged.
+            */
+            Logger logger = new Logger.Builder()
+                .Level(Logger.Levels.ALL)
+                .FilePath("/Users/user_name/Documents/csharp_sdk_log.log")
+                .Build();
 
             //Create an UserSignature instance that takes user Email as parameter
             UserSignature user = new UserSignature("abc@zoho.com");
@@ -932,26 +1106,41 @@ namespace TestAutomatedSDK
             Environment environment = USDataCenter.PRODUCTION;
 
             /*
-             * Create a Token instance
-             * 1 -> OAuth client id.
-             * 2 -> OAuth client secret.
-             * 3 -> OAuth redirect URL.
-             * 4 -> REFRESH/GRANT token.
-             * 4 -> token type.
-             */
-            Token token = new OAuthToken("clientId", "clientSecret", "REFRESH/GRANT token", TokenType.REFRESH / GRANT, "redirectURL");
+            * Create a Token instance that requires the following
+            * clientId -> OAuth client id.
+            * clientSecret -> OAuth client secret.
+            * refreshToken -> REFRESH token.
+            * grantToken -> GRANT token.
+            * id -> User unique id.
+            * redirectURL -> OAuth redirect URL.
+            */
+            // if ID (obtained from persistence) is available
+            Token token = new OAuthToken.Builder()
+            .ClientId("clientId")
+            .ClientSecret("clientSecret")
+            .RefreshToken("refreshToken")
+            .RedirectURL("redirectURL")
+            .Build();
 
             /*
-             * Create an instance of TokenStore.
-             * 1 -> DataBase host name. Default "localhost"
-             * 2 -> DataBase name. Default "zohooauth"
-             * 3 -> DataBase user name. Default "root"
-             * 4 -> DataBase password. Default ""
-             * 5 -> DataBase port number. Default "3306"
-             */
-            //TokenStore tokenstore = new DBStore();
+            * Create an instance of DBStore.
+            * Host -> DataBase host name. Default "localhost"
+            * DatabaseName -> DataBase name. Default "zohooauth"
+            * UserName -> DataBase user name. Default "root"
+            * Password -> DataBase password. Default ""
+            * PortNumber -> DataBase port number. Default "3306"
+            * TableName -> Table Name. Default value "oauthtoken"
+            */
+            //TokenStore tokenstore = new DBStore.Builder().Build();
 
-            TokenStore tokenstore = new DBStore("hostName", "dataBaseName", "userName", "password", "portNumber");
+            TokenStore tokenstore = new DBStore.Builder()
+            .Host("hostName")
+            .DatabaseName("dataBaseName")
+            .TableName("tableName")
+            .UserName("userName")
+            .Password("password")
+            .PortNumber("portNumber")
+            .Build();
 
             //TokenStore tokenstore = new FileStore("absolute_file_path");
 
@@ -959,27 +1148,54 @@ namespace TestAutomatedSDK
             * autoRefreshFields
             * if true - all the modules' fields will be auto-refreshed in the background, every    hour.
             * if false - the fields will not be auto-refreshed in the background. The user can manually delete the file(s) or refresh the fields using methods from ModuleFieldsHandler(com.zoho.crm.api.util.ModuleFieldsHandler)
-            *
+            * 
             * pickListValidation
             * if true - value for any picklist field will be validated with the available values.
             * if false - value for any picklist field will not be validated, resulting in creation of a new value.
             */
-
-            SDKConfig config = new SDKConfig.Builder().SetAutoRefreshFields(true).SetPickListValidation(false).Build();
+            SDKConfig config = new SDKConfig.Builder().AutoRefreshFields(false).PickListValidation(false).Build();
 
             string resourcePath = "/Users/username/Documents/csharpsdk-application";
 
-            /*
-            * Call static initialize method of Initializer class that takes the arguments
-            * 1 -> UserSignature instance
-            * 2 -> Environment instance
-            * 3 -> Token instance
-            * 4 -> TokenStore instance
-            * 5 -> SDKConfig instance
-            * 6 -> resourcePath - A String
-            * 7 -> Logger instance
+            /**
+            * Create an instance of RequestProxy class that takes the following parameters
+            * Host -> Host
+            * Port -> Port Number
+            * User -> User Name
+            * Password -> Password
+            * UserDomain -> User Domain
             */
-            SDKInitializer.Initialize(user, environment, token, tokenstore, config, resourcePath, logger);
+            RequestProxy requestProxy = new RequestProxy.Builder()
+            .Host("proxyHost")
+            .Port(proxyPort)
+            .User("proxyUser")
+            .Password("password")
+            .UserDomain("userDomain")
+            .Build();
+
+            /*
+            * The initialize method of Initializer class that takes the following arguments
+            * User -> UserSignature instance
+            * Environment -> Environment instance
+            * Token -> Token instance
+            * Store -> TokenStore instance
+            * SDKConfig -> SDKConfig instance
+            * ResourcePath -> resourcePath -A String
+            * Logger -> Logger instance
+            * RequestProxy -> RequestProxy instance
+            */
+
+			// Set the following in InitializeBuilder
+			new SDKInitializer.Builder()
+			.User(user)
+			.Environment(environment)
+			.Token(token)
+			.Store(tokenstore)
+			.SDKConfig(config)
+			.ResourcePath(resourcePath)
+			.Logger(logger)
+			//.RequestProxy(requestProxy)
+			.Initialize();
 
             String moduleAPIName = "Leads";
 

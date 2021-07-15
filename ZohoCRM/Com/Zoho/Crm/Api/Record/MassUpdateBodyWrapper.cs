@@ -8,7 +8,7 @@ namespace Com.Zoho.Crm.API.Record
 	{
 		private List<Record> data;
 		private string cvid;
-		private List<long?> ids;
+		private List<string> ids;
 		private Territory territory;
 		private bool? overWrite;
 		private List<Criteria> criteria;
@@ -54,17 +54,17 @@ namespace Com.Zoho.Crm.API.Record
 			}
 		}
 
-		public List<long?> Ids
+		public List<string> Ids
 		{
 			/// <summary>The method to get the ids</summary>
-			/// <returns>Instance of List<Long></returns>
+			/// <returns>Instance of List<String></returns>
 			get
 			{
 				return  this.ids;
 
 			}
 			/// <summary>The method to set the value to ids</summary>
-			/// <param name="ids">Instance of List<long?></param>
+			/// <param name="ids">Instance of List<string></param>
 			set
 			{
 				 this.ids=value;

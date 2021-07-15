@@ -94,7 +94,7 @@ namespace Com.Zoho.Crm.API.Util
 				}
 			}
 	    }
-		
+
 		/// <summary>
 		/// The method to delete fields of the given module from the current user's fields JSON file.
 		/// </summary>
@@ -108,7 +108,7 @@ namespace Com.Zoho.Crm.API.Util
 				if (System.IO.File.Exists(recordFieldDetailsPath))
 				{
 				    JObject recordFieldDetailsJson = Initializer.GetJSON(recordFieldDetailsPath);
-				
+
 				    if(recordFieldDetailsJson.ContainsKey(module.ToLower()))
 				    {
 						Utility.DeleteFields(recordFieldDetailsJson, module);
@@ -146,7 +146,7 @@ namespace Com.Zoho.Crm.API.Util
 				{
 					DeleteFields(module);
 
-					Utility.GetFields(module);
+					Utility.GetFieldsInfo(module, null);
 				}
 				catch (SDKException e)
 				{
@@ -164,7 +164,7 @@ namespace Com.Zoho.Crm.API.Util
 				}
 			}
 		}
-	
+
 		/**
 		 * The method to force-refresh fields of all the available modules.
 		 * @throws SDKException

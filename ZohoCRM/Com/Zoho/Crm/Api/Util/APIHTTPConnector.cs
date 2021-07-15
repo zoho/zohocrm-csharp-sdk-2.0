@@ -153,6 +153,8 @@ namespace Com.Zoho.Crm.API.Util
 
             HttpWebRequest requestObj = (HttpWebRequest)WebRequest.Create(url);
 
+            requestObj.Timeout = (Initializer.GetInitializer().SDKConfig.Timeout) * 1000;
+
             RequestProxy requestProxy = Initializer.GetInitializer().RequestProxy;
 
             if(requestProxy != null)
@@ -173,8 +175,6 @@ namespace Com.Zoho.Crm.API.Util
 
                 SDKLogger.LogInfo(this.ProxyLog(requestProxy));
             }
-
-            requestObj.Timeout = Initializer.GetInitializer().SDKConfig.Timeout;
 
             SetRequestMethod(requestObj);
 
@@ -240,9 +240,9 @@ namespace Com.Zoho.Crm.API.Util
                     request.Method = Constants.REQUEST_METHOD_PATCH;
 
                     return;
+                default:
+                    return;
             }
-
-            return;
         }
 
         private void SetQueryHeaders(ref HttpWebRequest request)
@@ -303,24 +303,39 @@ namespace Com.Zoho.Crm.API.Util
 
             reqHeaders[Constants.AUTHORIZATION] = Constants.CANT_DISCLOSE;
 
-            return requestMethod.ToString() + " - " + Constants.URL + " = " + url + ", " + Constants.HEADERS + " = " + JsonConvert.SerializeObject(reqHeaders) + ", " + Constants.PARAMS + " = " + JsonConvert.SerializeObject(parameters) + ".";
-        }
+            StringBuilder stringBuilder = new StringBuilder();
 
+            stringBuilder.Append(requestMethod.ToString()).Append(" - ");
+
+            stringBuilder.Append(Constants.URL).Append(" = ").Append(url).Append(", ");
+
+            stringBuilder.Append(Constants.HEADERS).Append(" = ").Append(JsonConvert.SerializeObject(reqHeaders)).Append(", ");
+
+            stringBuilder.Append(Constants.PARAMS).Append(" = ").Append(JsonConvert.SerializeObject(parameters)).Append(".");
+
+            return stringBuilder.ToString();
+        }
         private string ProxyLog(RequestProxy requestProxy)
         {
-            string proxyDetails = Constants.PROXY_SETTINGS + Constants.PROXY_HOST + requestProxy.Host + ", " + Constants.PROXY_PORT + requestProxy.Port.ToString();
+            StringBuilder proxyStringBuilder = new StringBuilder();
+
+            proxyStringBuilder.Append(Constants.PROXY_SETTINGS);
+
+            proxyStringBuilder.Append(Constants.PROXY_HOST).Append(requestProxy.Host).Append(", ");
+
+            proxyStringBuilder.Append(Constants.PROXY_PORT).Append(requestProxy.Port.ToString());
 
             if (requestProxy.User != null)
             {
-                proxyDetails += ", " + Constants.PROXY_USER + requestProxy.User;
+                proxyStringBuilder.Append(", ").Append(Constants.PROXY_USER).Append(requestProxy.User);
             }
 
             if (requestProxy.UserDomain != null)
             {
-                proxyDetails += ", " + Constants.PROXY_DOMAIN + requestProxy.UserDomain;
+                proxyStringBuilder.Append(", ").Append(Constants.PROXY_DOMAIN).Append(requestProxy.UserDomain);
             }
 
-            return proxyDetails;
+            return proxyStringBuilder.ToString();
         }
     }
 }

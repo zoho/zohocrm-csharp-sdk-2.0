@@ -95,11 +95,11 @@ namespace csharpsdksampleapplication
 
                 string absoluteFilePath = "/Users/Desktop/test.html";
 
-                string destinationFolder = "/Users/Documents/java/attachment";
+                string destinationFolder = "/Users/Desktop";
 
                 string attachmentURL = "https://5.imimg.com/data5/KJ/UP/MY-8655440/zoho-crm-500x500.png";
 
-                List<long> attachmentIds = new List<long>() { 34770617600002, 34770617607001, 34770615961010 };
+                List<long> attachmentIds = new List<long>() { 3477061762, 34770617607001, 34770615961010 };
 
                 Com.Zoho.Crm.Sample.Attachments.Attachment.UploadAttachments(moduleAPIName, recordId, absoluteFilePath);
 
@@ -177,7 +177,7 @@ namespace csharpsdksampleapplication
 
                 string downloadUrl = "https://download-accl.zoho.com/v2/crm/xxxx/bulk-write/34770617608008/34770617608008.zip";
 
-                string destinationFolder = "/Users/Documents/java/attachment";
+                string downloadUrl = "https://download-accl.zoho.com/v2/crm/xxxx/bulk-write/34770617608008/34770617608008.zip";
 
                 Com.Zoho.Crm.Sample.BulkWrite.BulkWrite.UploadFile(orgID, absoluteFilePath);
 
@@ -197,9 +197,9 @@ namespace csharpsdksampleapplication
         {
             try
             {
-                long contactRoleId = 34770617540001;
+                long contactRoleId = 347706110704008;
 
-                List<long> contactRoleIds = new List<long>() { 34770617600010, 34770617600011, 34770617600012, 34770617600013, 34770617600014 };
+                List<string> contactRoleIds = new List<string>() { "347706110704010", "347706110489008", "347706110416002", "347706110416001", "347706110404001" };
 
                 Com.Zoho.Crm.Sample.ContactRoles.ContactRoles.GetContactRoles();
 
@@ -214,6 +214,14 @@ namespace csharpsdksampleapplication
                 Com.Zoho.Crm.Sample.ContactRoles.ContactRoles.UpdateContactRole(contactRoleId);
 
                 Com.Zoho.Crm.Sample.ContactRoles.ContactRoles.DeleteContactRole(contactRoleId);
+
+                Com.Zoho.Crm.Sample.ContactRoles.ContactRoles.GetAllContactRolesOfDeal(34770610207274);
+
+                Com.Zoho.Crm.Sample.ContactRoles.ContactRoles.GetContactRoleOfDeal(34770610208071, 34770610207274);
+
+                Com.Zoho.Crm.Sample.ContactRoles.ContactRoles.AddContactRoleToDeal(34770610208071, 34770610207274);
+
+                Com.Zoho.Crm.Sample.ContactRoles.ContactRoles.RemoveContactRoleFromDeal(34770610208071, 34770610207274);
             }
             catch (Exception ex)
             {
@@ -394,7 +402,7 @@ namespace csharpsdksampleapplication
         {
             try
             {
-                List<long> channelIds = new List<long>() { 1006800212 };
+                List<long> channelIds = new List<long>() { 1006800211 };
 
                 Com.Zoho.Crm.Sample.Notification.Notification.EnableNotifications();
 
@@ -462,9 +470,9 @@ namespace csharpsdksampleapplication
         {
             try
             {
-                string moduleAPIName = "Leads";
+                string moduleAPIName = "leads";
 
-                long recordId = 34770617589001;
+                long recordId = 347706110733002;
 
                 string destinationFolder = "/Users/Desktop/field/";
 
@@ -477,15 +485,23 @@ namespace csharpsdksampleapplication
 
                 string absoluteFilePath = "/Users/Desktop/field/download.png";
 
-                List<long> recordIds = new List<long>() { 34770617079170, 34770616595015, 34770615908001 };
+                List<string> recordIds = new List<string>() { "12345432", "34770616595015", "34770615908001" };
 
                 string jobId = "34770617633026";
+
+                string externalFieldValue = "TestExternalLead";
 
                 Com.Zoho.Crm.Sample.Record.Record.GetRecord(moduleAPIName, recordId, destinationFolder);
 
                 Com.Zoho.Crm.Sample.Record.Record.UpdateRecord(moduleAPIName, recordId);
 
                 Com.Zoho.Crm.Sample.Record.Record.DeleteRecord(moduleAPIName, recordId);
+
+                Com.Zoho.Crm.Sample.Record.Record.GetRecordUsingExternalId(moduleAPIName, externalFieldValue, destinationFolder);
+
+                Com.Zoho.Crm.Sample.Record.Record.UpdateRecordUsingExternalId(moduleAPIName, externalFieldValue);
+
+                Com.Zoho.Crm.Sample.Record.Record.DeleteRecordUsingExternalId(moduleAPIName, externalFieldValue);
 
                 Com.Zoho.Crm.Sample.Record.Record.GetRecords(moduleAPIName);
 
@@ -548,17 +564,21 @@ namespace csharpsdksampleapplication
         {
             try
             {
-                string moduleAPIName = "Products";
+                string moduleAPIName = "leads";
 
-                long recordId = 34770617606020;
+                long recordId = 347706110733001;
 
-                string relatedListAPIName = "Price_Books";
+                string relatedListAPIName = "products";
 
-                long relatedRecordId = 34770615917011;
+                long relatedRecordId = 347706110725009;
 
                 string destinationFolder = "/Users/Desktop/field/";
 
-                List<long> relatedListIds = new List<long>(){ 34770610307003, 34770615917011, 34770615919001 };
+                string externalValue = "TestExternal121";
+
+                string externalFieldValue = "TestExternalProduct";
+
+                List<string> relatedListIds = new List<string>(){ "347706110725009" };
 
                 Com.Zoho.Crm.Sample.RelatedRecords.RelatedRecords.GetRelatedRecords(moduleAPIName, recordId, relatedListAPIName);
 
@@ -566,11 +586,23 @@ namespace csharpsdksampleapplication
 
                 Com.Zoho.Crm.Sample.RelatedRecords.RelatedRecords.DelinkRecords(moduleAPIName, recordId, relatedListAPIName, relatedListIds);
 
+                Com.Zoho.Crm.Sample.RelatedRecords.RelatedRecords.GetRelatedRecordsUsingExternalId(moduleAPIName, externalValue, relatedListAPIName);
+
+                Com.Zoho.Crm.Sample.RelatedRecords.RelatedRecords.UpdateRelatedRecordsUsingExternalId(moduleAPIName, externalValue, relatedListAPIName);
+
+                Com.Zoho.Crm.Sample.RelatedRecords.RelatedRecords.DeleteRelatedRecordsUsingExternalId(moduleAPIName, externalValue, relatedListAPIName, relatedListIds);
+
                 Com.Zoho.Crm.Sample.RelatedRecords.RelatedRecords.GetRelatedRecord(moduleAPIName, recordId, relatedListAPIName, relatedRecordId, destinationFolder);
 
                 Com.Zoho.Crm.Sample.RelatedRecords.RelatedRecords.UpdateRelatedRecord(moduleAPIName, recordId, relatedListAPIName, relatedRecordId);
 
                 Com.Zoho.Crm.Sample.RelatedRecords.RelatedRecords.DelinkRecord(moduleAPIName, recordId, relatedListAPIName, relatedRecordId);
+
+                Com.Zoho.Crm.Sample.RelatedRecords.RelatedRecords.GetRelatedRecordUsingExternalId(moduleAPIName, externalValue, relatedListAPIName, externalFieldValue, destinationFolder);
+
+                Com.Zoho.Crm.Sample.RelatedRecords.RelatedRecords.UpdateRelatedRecordUsingExternalId(moduleAPIName, externalValue, relatedListAPIName, externalFieldValue);
+
+                Com.Zoho.Crm.Sample.RelatedRecords.RelatedRecords.DeleteRelatedRecordUsingExternalId(moduleAPIName, externalValue, relatedListAPIName, externalFieldValue);
             }
             catch (System.Exception ex)
             {
@@ -622,7 +654,7 @@ namespace csharpsdksampleapplication
             {
                 string moduleAPIName = "Leads";
 
-                long tagId = 34770617286001;
+                long tagId = 34770618236020;
 
                 long recordId = 34770615623115;
 
@@ -630,7 +662,7 @@ namespace csharpsdksampleapplication
 
                 List<long> recordIds = new List<long>() { 34770617074131, 34770616920152 };
 
-                string conflictId = "34770617029041";
+                string conflictId = "34770618790001";
 
                 Com.Zoho.Crm.Sample.Tags.Tag.GetTags(moduleAPIName);
 
@@ -666,7 +698,7 @@ namespace csharpsdksampleapplication
             {
                 long taxId = 34770616449002;
 
-                List<long> taxIds = new List<long>() { 34770617643024, 34770615682038 };
+                List<long> taxIds = new List<long>() { 347706110744001, 34770615682038 };
 
                 Com.Zoho.Crm.Sample.Taxes.Tax.GetTaxes();
 
@@ -724,7 +756,7 @@ namespace csharpsdksampleapplication
         {
             try
             {
-                long userId = 34770617639002;
+                long userId = 347706110731022;
 
                 Com.Zoho.Crm.Sample.Users.User.GetUsers();
 

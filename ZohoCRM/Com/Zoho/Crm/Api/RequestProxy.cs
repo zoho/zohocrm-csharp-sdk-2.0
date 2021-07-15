@@ -11,31 +11,76 @@ namespace Com.Zoho.Crm.API
 	/// </summary>
 	public class RequestProxy
 	{
+		public class Builder
+        {
+			private string host;
+
+			private int port;
+
+			private string userDomain;
+
+			private string user;
+
+			private string password = "";
+
+			public Builder Host(string host)
+            {
+				Utility.AssertNotNull(host, Constants.REQUEST_PROXY_ERROR, Constants.HOST_ERROR_MESSAGE);
+
+				this.host = host;
+
+				return this;
+			}
+
+			public Builder Port(int port)
+            {
+				Utility.AssertNotNull(port, Constants.REQUEST_PROXY_ERROR, Constants.PORT_ERROR_MESSAGE);
+
+				this.port = port;
+
+				return this;
+			}
+
+			public Builder UserDomain(string userDomain)
+            {
+				this.userDomain = userDomain;
+
+				return this;
+            }
+
+			public Builder User(string user)
+			{
+				this.user = user;
+
+				return this;
+			}
+
+			public Builder Password(string password)
+			{
+				this.password = password;
+
+				return this;
+			}
+
+			public RequestProxy Build()
+            {
+				Utility.AssertNotNull(host, Constants.REQUEST_PROXY_ERROR, Constants.HOST_ERROR_MESSAGE);
+
+				Utility.AssertNotNull(port, Constants.REQUEST_PROXY_ERROR, Constants.PORT_ERROR_MESSAGE);
+
+				return new RequestProxy(this.host, this.port, this.user, this.password, this.userDomain);
+			}
+		}
+
         private string host;
-	
+
 		private int port;
-	
+
 		private string userDomain;
-	
+
 		private string user;
-	
+
 		private string password;
-
-		/// <summary>
-		/// Creates a RequestProxy class instance with the specified parameters.
-		/// </summary>
-		/// <param name="host">A String containing the hostname or address of the proxy server</param>
-		/// <param name="port">A Integer containing The port number of the proxy server</param>
-		public RequestProxy(string host, int port) : this(host : host, port : port, null, null, null) { }
-
-		/// <summary>
-		/// Creates a RequestProxy class instance with the specified parameters.
-		/// </summary>
-		/// <param name="host">A String containing the hostname or address of the proxy server</param>
-		/// <param name="port">A Integer containing The port number of the proxy server</param>
-		/// <param name="user">A String containing the user name of the proxy server</param>
-		/// <param name="password">A String containing the password of the proxy server</param>
-		public RequestProxy(string host, int port, string user, string password): this(host : host, port : port, user : user, password : password, userDomain : null) { }
 
 		/// <summary>
 		/// Creates a RequestProxy class instance with the specified parameters.
@@ -45,22 +90,17 @@ namespace Com.Zoho.Crm.API
 		/// <param name="user">A String containing the user name of the proxy server</param>
 		/// <param name="password">A String containing the password of the proxy server</param>
 		/// <param name="userDomain">A String containing the domain of the proxy server</param>
-		public RequestProxy(string host, int port, string user, string password, string userDomain)
+		private RequestProxy(string host, int port, string user, string password, string userDomain)
 		{
-			if(host == null)
-			{
-				throw new SDKException(Constants.REQUEST_PROXY_ERROR, Constants.HOST_ERROR_MESSAGE);
-			}
-
 			this.host = host;
-		
+
 			this.port = port;
-		
+
 			this.userDomain = userDomain;
-		
+
 			this.user = user;
-		
-			this.password = password != null ? password : "";
+
+			this.password = password;
 		}
 
 		/// <summary>
