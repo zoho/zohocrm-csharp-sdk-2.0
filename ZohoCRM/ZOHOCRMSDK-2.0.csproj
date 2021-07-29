@@ -17,7 +17,7 @@
 		</NuGetPackageImportStamp>
 		<NeutralLanguage>en-US</NeutralLanguage>
 		<PackageId>ZOHOCRMSDK-2.0</PackageId>
-		<PackageVersion>2.0.0</PackageVersion>
+		<PackageVersion>2.0.1</PackageVersion>
 		<Authors>Zoho CRM API Team</Authors>
 		<Owners>Zoho CRM API Team</Owners>
 		<Description>Provides C# SDK support for Zoho CRM APIs.</Description>
@@ -25,9 +25,7 @@
 		<Summary>C# SDK offers a way to create client C# applications that can be integrated with Zoho CRM. This SDK makes the access and use of necessary CRM APIs with ease.</Summary>
 		<PackageTags>ZOHOCRMSDK-2.0,ZCRMSDK,zohocrm,sdk,zcrmsdk,zoho</PackageTags>
 		<Title>ZOHOCRMSDK-2.0</Title>
-		<PackageReleaseNotes>Restructuring of Configuration process to improve user-friendliness.
-Records API and Related Records API upgraded to support External ID feature.
-</PackageReleaseNotes>
+		<PackageReleaseNotes>Removed mandatory check in External ID operations.</PackageReleaseNotes>
   	</PropertyGroup>
   	<PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
 		<Optimize>true</Optimize>

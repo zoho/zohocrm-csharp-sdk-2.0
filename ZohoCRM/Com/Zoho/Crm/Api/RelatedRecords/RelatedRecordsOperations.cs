@@ -101,8 +101,6 @@ namespace Com.Zoho.Crm.API.RelatedRecords
 
 			handlerInstance.Request=request;
 
-			handlerInstance.MandatoryChecker=true;
-
 			handlerInstance.AddHeader(new Header<string>("X-EXTERNAL", "com.zoho.crm.api.RelatedRecords.UpdateRelatedRecordsHeader"),  this.xExternal);
 
 			Utility.GetRelatedLists( this.relatedListAPIName,  this.moduleAPIName, handlerInstance);
@@ -224,8 +222,6 @@ namespace Com.Zoho.Crm.API.RelatedRecords
 			handlerInstance.ContentType="application/json";
 
 			handlerInstance.Request=request;
-
-			handlerInstance.MandatoryChecker=true;
 
 			handlerInstance.AddHeader(new Header<string>("X-EXTERNAL", "com.zoho.crm.api.RelatedRecords.UpdateRelatedRecordsUsingExternalIDHeader"),  this.xExternal);
 
