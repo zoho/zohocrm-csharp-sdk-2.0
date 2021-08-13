@@ -183,8 +183,6 @@ namespace Com.Zoho.Crm.API.Record
 
 			handlerInstance.Request=request;
 
-			handlerInstance.MandatoryChecker=true;
-
 			handlerInstance.Header=headerInstance;
 
 			handlerInstance.ModuleAPIName=moduleAPIName;
