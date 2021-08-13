@@ -406,7 +406,7 @@ namespace Com.Zoho.Crm.API.Util
             }
         }
 
-               private static void ModifyFields(string recordFieldDetailsPath, string modifiedTime)
+        private static void ModifyFields(string recordFieldDetailsPath, string modifiedTime)
 	    {
 		    JObject modifiedModules = GetModules(modifiedTime);
 
