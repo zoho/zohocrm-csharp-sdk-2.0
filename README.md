@@ -29,13 +29,13 @@ Since Zoho CRM APIs are authenticated with OAuth2 standards, you should register
 
 - Visit this page [https://api-console.zoho.com/](https://api-console.zoho.com)
 
-- Click on `ADD CLIENT`.
+- Click `ADD CLIENT`.
 
-- Choose a `Client Type`.
+- Choose the `Client Type`.
 
 - Enter **Client Name**, **Client Domain** or **Homepage URL** and **Authorized Redirect URIs**. Click `CREATE`.
 
-- Your Client app will be created and displayed.
+- Your Client app will be created.
 
 - Select the created OAuth client.
 
@@ -47,8 +47,6 @@ C# SDK requires .NET Framework 4.6.1 or above to be set up in your development e
 
 ## Including the SDK in your project
 
-You can include the SDK to your project using:
-
 1. Install Visual Studio IDE from [Visual Studio](https://visualstudio.microsoft.com/downloads/) (if not installed).
 
 2. C# SDK is available as a Nuget package. The ZOHOCRMSDK-2.0 assembly can be installed through the Nuget Package Manager or through the following options:
@@ -56,7 +54,7 @@ You can include the SDK to your project using:
     - Package Manager
 
         ```sh
-        Install-Package ZOHOCRMSDK-2.0 -Version 3.0.0
+        Install-Package ZOHOCRMSDK-2.0 -Version 4.0.0
         Install-Package MySql.Data -Version 6.9.12
         Install-Package Newtonsoft.Json -Version 11.0.1
         ```
@@ -64,7 +62,7 @@ You can include the SDK to your project using:
     - .NET  CLI
 
         ```sh
-        dotnet add package ZOHOCRMSDK-2.0 --version 3.0.0
+        dotnet add package ZOHOCRMSDK-2.0 --version 4.0.0
         dotnet add package Newtonsoft.Json --version 11.0.1
         dotnet add package MySql.Data --version 6.9.12
         ```
@@ -75,7 +73,7 @@ You can include the SDK to your project using:
 
         ```sh
         <ItemGroup>
-            <PackageReference Include="ZOHOCRMSDK-2.0" Version="3.0.0" />
+            <PackageReference Include="ZOHOCRMSDK-2.0" Version="4.0.0" />
             <PackageReference Include="Newtonsoft.Json" Version="11.0.1" />
             <PackageReference Include="MySql.Data" Version="6.9.12" />
         </ItemGroup>
@@ -113,7 +111,7 @@ The persistence is achieved by writing an implementation of the inbuilt **TokenS
 
 - **DeleteTokens()** - The method to delete all the stored tokens.
 
-- **GetTokenById(string id, Token token)** - This method is used to retrieve the user token details based on unique ID.
+- **GetTokenById(string id, Token token)** - The method to retrieve the user's token details based on unique ID.
 
 ### DataBase Persistence
 
@@ -142,7 +140,7 @@ In case the user prefers to use the default DataBase persistence, **MySQL** can 
   - redirect_url varchar(255)
 
 Note:
-- Custom database name and table name can be set in DBStore instance
+- Custom database name and table name can be set in DBStore instance.
 
 #### MySQL Query
 
@@ -218,7 +216,7 @@ TokenStore tokenstore = new FileStore("/Users/user_name/Documents/csharp_sdk_tok
 
 ### Custom Persistence
 
-To use Custom Persistence, the user must implement **TokenStore interface**(**Com.Zoho.API.Authenticator.Store.TokenStore**) and override the methods.
+To use Custom Persistence, you must implement **TokenStore interface**(**Com.Zoho.API.Authenticator.Store.TokenStore**) and override the methods.
 
 ```C#
 using System;
@@ -288,21 +286,16 @@ namespace user.store
 
 ## Configuration
 
-Before you get started with creating your PHP application, you need to register your client and authenticate the app with Zoho.
+Before you get started with creating your C# application, you need to register your client and authenticate the app with Zoho.
 
-- Create an instance of **Logger** Class to log exception and API information.
-
-    ```C#
-    /*
-    * Create an instance of Logger Class that requires the following
-    * Level -> Level of the log messages to be logged. Can be configured by typing Levels "." and choose any level from the list displayed.
-    * FilePath -> Absolute file path, where messages need to be logged.
-    */
-    Logger logger = new Logger.Builder()
-    .Level(Logger.Levels.ALL)
-    .FilePath("/Users/Documents/csharp_sdk_log.log")
-    .Build();
-    ```
+| Mandatory Keys    | Optional Keys |
+| :---------------- | :------------ |
+| User              | Logger        |
+| Environment       | Store         |
+| Token             | SDKConfig     |
+|                   | RequestProxy  |
+|                   | ResourcePath  |
+----
 
 - Create an instance of **UserSignature** that identifies the current user.
 
@@ -311,7 +304,7 @@ Before you get started with creating your PHP application, you need to register 
     UserSignature user = new UserSignature("abc@zoho.com");
     ```
 
-- Configure API environment which decides the domain and the URL to make API calls.
+- Configure the API environment which decides the domain and the URL to make API calls.
 
     ```C#
     /*
@@ -323,7 +316,7 @@ Before you get started with creating your PHP application, you need to register 
     Environment environment = USDataCenter.PRODUCTION;
     ```
 
-- Create an instance of **OAuthToken** with the information  that you get after registering your Zoho client.
+- Create an instance of **OAuthToken** with the information that you get after registering your Zoho client.
 
     ```C#
     /*
@@ -331,6 +324,7 @@ Before you get started with creating your PHP application, you need to register 
     * clientId -> OAuth client id.
     * clientSecret -> OAuth client secret.
     * refreshToken -> REFRESH token.
+    * accessToken -> Access token.
     * grantToken -> GRANT token.
     * id -> User unique id.
     * redirectURL -> OAuth redirect URL.
@@ -357,9 +351,28 @@ Before you get started with creating your PHP application, you need to register 
     .RefreshToken("refreshToken")
     .RedirectURL("redirectURL")
     .Build();
+
+    // if access token is available
+    Token token = new OAuthToken.Builder()
+    .AccessToken("accessToken")
+    .Build();
     ```
 
-- Create an instance of **TokenStore** to persist tokens, used for authenticating all the requests.
+- Create an instance of **Logger** Class to log exception and API information. By default, the SDK constructs a Logger instance with level - INFO and file_path - (sdk_logs.log parallel to bin/(Debug or Release) folder )
+
+    ```C#
+    /*
+    * Create an instance of Logger Class that requires the following
+    * Level -> Level of the log messages to be logged. Can be configured by typing Levels "." and choose any level from the list displayed.
+    * FilePath -> Absolute file path, where messages need to be logged.
+    */
+    Logger logger = new Logger.Builder()
+    .Level(Logger.Levels.ALL)
+    .FilePath("/Users/Documents/csharp_sdk_log.log")
+    .Build();
+    ```
+
+- Create an instance of **TokenStore** to persist tokens, used for authenticating all the requests. By default, the SDK creates the sdk_tokens.txt file (parallel to to bin/(Debug or Release) folder) to persist the tokens.
 
     ```C#
     /*
@@ -391,11 +404,12 @@ Before you get started with creating your PHP application, you need to register 
 
     ```C#
     /*
-    * autoRefreshFields
+    * By default, the SDK creates the SDKConfig instance
+    * autoRefreshFields (default - false)
     * if true - all the modules' fields will be auto-refreshed in the background, every    hour.
     * if false - the fields will not be auto-refreshed in the background. The user can manually delete the file(s) or refresh the fields using methods from ModuleFieldsHandler(com.zoho.crm.api.util.ModuleFieldsHandler)
     * 
-    * pickListValidation
+    * pickListValidation (default - true)
     * if true - value for any picklist field will be validated with the available values.
     * if false - value for any picklist field will not be validated, resulting in creation of a new value.
     */
@@ -422,7 +436,7 @@ Before you get started with creating your PHP application, you need to register 
     .Build();
     ```
 
-- The path containing the absolute directory path to store user specific files containing module fields information.
+- The path containing the absolute directory path to store user specific files containing module fields information. By default, the SDK stores the user-specific files in a folder parallel to bin/(Debug or Release)
 
     ```C#
     string resourcePath = "/Users/user_name/Documents/csharpsdk-application";
