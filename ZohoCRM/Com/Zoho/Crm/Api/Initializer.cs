@@ -73,11 +73,20 @@ namespace Com.Zoho.Crm.API
 
                 Utility.AssertNotNull(token, errorMessage, Constants.TOKEN_ERROR_MESSAGE);
 
-                Utility.AssertNotNull(store, errorMessage, Constants.STORE_ERROR_MESSAGE);
+                if (store == null)
+                {
+                    store = new FileStore(Path.GetDirectoryName(Assembly.GetCallingAssembly().Location) + Path.DirectorySeparatorChar + Constants.TOKEN_FILE);
+                }
 
-                Utility.AssertNotNull(sdkConfig, errorMessage, Constants.SDK_CONFIG_ERROR_MESSAGE);
+                if (sdkConfig == null)
+                {
+                    sdkConfig = new SDKConfig.Builder().Build();
+                }
 
-                Utility.AssertNotNull(resourcePath, errorMessage, Constants.RESOURCE_PATH_ERROR_MESSAGE);
+                if (resourcePath == null)
+                {
+                    resourcePath = Path.GetDirectoryName(Assembly.GetCallingAssembly().Location);
+                }
 
                 if (logger == null)
                 {
@@ -113,8 +122,6 @@ namespace Com.Zoho.Crm.API
 
             public Builder SDKConfig(SDKConfig sdkConfig)
             {
-                Utility.AssertNotNull(sdkConfig, errorMessage, Constants.SDK_CONFIG_ERROR_MESSAGE);
-
 			    this.sdkConfig = sdkConfig;
 
 			    return this;
@@ -129,11 +136,6 @@ namespace Com.Zoho.Crm.API
 
             public Builder ResourcePath(string resourcePath)
             {
-                if (string.IsNullOrEmpty(resourcePath) || string.IsNullOrWhiteSpace(resourcePath))
-                {
-                    throw new SDKException(errorMessage, Constants.RESOURCE_PATH_ERROR_MESSAGE);
-                }
-
                 if(!Directory.Exists(resourcePath))
                 {
                     throw new SDKException(errorMessage, Constants.RESOURCE_PATH_INVALID_ERROR_MESSAGE);
@@ -155,8 +157,6 @@ namespace Com.Zoho.Crm.API
 
             public Builder Store(TokenStore store)
             {
-                Utility.AssertNotNull(store, errorMessage, Constants.STORE_ERROR_MESSAGE);
-
 			    this.store = store;
 
 			    return this;

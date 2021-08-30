@@ -95,11 +95,13 @@ namespace Com.Zoho.Crm.API.Util
 
         public static readonly string GMT = "GMT";
 
-        public static readonly string LOG_FILE_NAME = "LogFile.log";
+        public static readonly string LOG_FILE_NAME = "sdk_logs.log";
+
+        public static readonly string TOKEN_FILE = "sdk_tokens.txt";
 
         public static readonly string ZOHO_SDK = "X-ZOHO-SDK";
 
-        public static readonly string SDK_VERSION = "3.0.0";
+        public static readonly string SDK_VERSION = "4.0.0";
 
         public static readonly string MODULEPACKAGENAME = "modulePackageName";
 
@@ -611,7 +613,7 @@ namespace Com.Zoho.Crm.API.Util
 
         public static readonly string CLIENT_SECRET_NULL_ERROR_MESSAGE = "ClientSecret MUST NOT be null";
 
-        public static readonly List<string> OAUTH_MANDATORY_KEYS = new List<string>() { "grantToken", "refreshToken", "id" };
+        public static readonly List<string> OAUTH_MANDATORY_KEYS = new List<string>() { "grantToken", "refreshToken", "id", "accessToken" };
 
         public static readonly List<string> SKIP_MODULES = new List<string>() { "deals" };
 
@@ -646,6 +648,8 @@ namespace Com.Zoho.Crm.API.Util
         public static readonly string UPLOAD_PHOTO_UNSUPPORTED_MESSAGE = "Photo Upload Operation is not supported by the module: ";
 
         public static readonly string CSHARP_NULL_TYPE_NAME = "System.Nullable`1";
+
+        public static readonly string CSHARP = "csharp_";
 
         static Constants()
         {
