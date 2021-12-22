@@ -436,7 +436,7 @@ Before you get started with creating your C# application, you need to register y
     .Build();
     ```
 
-- The path containing the absolute directory path to store user specific files containing module fields information. By default, the SDK stores the user-specific files in a folder parallel to bin/(Debug or Release)
+- The path containing the absolute directory path to store user-specific files containing module fields information. By default, the SDK stores the user-specific files in a folder parallel to bin/(Debug or Release)
 
     ```C#
     string resourcePath = "/Users/user_name/Documents/csharpsdk-application";
