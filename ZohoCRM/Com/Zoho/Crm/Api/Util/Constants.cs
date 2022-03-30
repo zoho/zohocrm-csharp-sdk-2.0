@@ -101,7 +101,7 @@ namespace Com.Zoho.Crm.API.Util
 
         public static readonly string ZOHO_SDK = "X-ZOHO-SDK";
 
-        public static readonly string SDK_VERSION = "5.0.0";
+        public static readonly string SDK_VERSION = "5.0.1";
 
         public static readonly string MODULEPACKAGENAME = "modulePackageName";
 
@@ -509,9 +509,9 @@ namespace Com.Zoho.Crm.API.Util
 
         public static readonly string SDK_UNINITIALIZATION_MESSAGE = "SDK is UnInitialized";
 
-        public static readonly string SKIP_MANDATORY = "skip_mandatory";
+        public static readonly string SKIP_MANDATORY = "skip-mandatory";
 
-        public static readonly string REQUIRED_IN_UPDATE = "required_in_update";
+        public static readonly string REQUIRED_IN_UPDATE = "required-in-update";
 
         public static readonly string REFRESH_SINGLE_MODULE_FIELDS_ERROR = "Exception in refreshing fields of module : ";
 
