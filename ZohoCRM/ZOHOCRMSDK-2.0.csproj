@@ -17,7 +17,7 @@
 		</NuGetPackageImportStamp>
 		<NeutralLanguage>en-US</NeutralLanguage>
 		<PackageId>ZOHOCRMSDK-2.0</PackageId>
-		<PackageVersion>4.0.0</PackageVersion>
+		<PackageVersion>5.0.0</PackageVersion>
 		<Authors>Zoho CRM API Team</Authors>
 		<Owners>Zoho CRM API Team</Owners>
 		<Description>Provides C# SDK support for Zoho CRM APIs.</Description>
@@ -25,7 +25,8 @@
 		<Summary>C# SDK offers a way to create client C# applications that can be integrated with Zoho CRM. This SDK makes the access and use of necessary CRM APIs with ease.</Summary>
 		<PackageTags>ZOHOCRMSDK-2.0,ZCRMSDK,zohocrm,sdk,zcrmsdk,zoho</PackageTags>
 		<Title>ZOHOCRMSDK-2.0</Title>
-		<PackageReleaseNotes>The SDK Initialization is made simple by reducing the required entities. </PackageReleaseNotes>
+		<PackageReleaseNotes>1. Support JP DC Environment. 
+2. Remove the required field in ownerlookup.</PackageReleaseNotes>
   	</PropertyGroup>
   	<PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
 		<Optimize>true</Optimize>
@@ -412,6 +413,7 @@
 		<Compile Include="Com\Zoho\API\Logger\SDKLogger.cs" />
 		<Compile Include="Com\Zoho\Crm\API\RequestProxy.cs" />
 		<Compile Include="Com\Zoho\Crm\API\SDKConfig.cs" />
+		<Compile Include="Com\Zoho\Crm\API\Dc\JPDataCenter.cs" />
   	</ItemGroup>
 	<ItemGroup>
 		<Folder Include="Com\" />

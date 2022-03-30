@@ -1107,7 +1107,7 @@ namespace Com.Zoho.Crm.API.Util
                 fieldDetail[Constants.LOOKUP] = true;
             }
 
-            if (apiType.ToLower().Equals(Constants.CONSENT_LOOKUP, StringComparison.OrdinalIgnoreCase))
+            if (apiType.ToLower().Equals(Constants.CONSENT_LOOKUP, StringComparison.OrdinalIgnoreCase) || apiType.ToLower().Equals(Constants.OWNER_LOOKUP, StringComparison.OrdinalIgnoreCase))
             {
                 fieldDetail[Constants.SKIP_MANDATORY] =  true;
             }

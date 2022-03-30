@@ -236,7 +236,7 @@ namespace Com.Zoho.Crm.API.Util
                     value = GetChoiceValue(value);
                 }
 
-                if (!valuesJA.Contains(value))
+                if (!valuesJA.Contains(Convert.ToString(value)))
                 {
                     detailsJO.Add(Constants.FIELD, memberName);
 

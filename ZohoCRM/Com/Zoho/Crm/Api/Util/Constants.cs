@@ -101,7 +101,7 @@ namespace Com.Zoho.Crm.API.Util
 
         public static readonly string ZOHO_SDK = "X-ZOHO-SDK";
 
-        public static readonly string SDK_VERSION = "4.0.0";
+        public static readonly string SDK_VERSION = "5.0.0";
 
         public static readonly string MODULEPACKAGENAME = "modulePackageName";
 
@@ -650,6 +650,8 @@ namespace Com.Zoho.Crm.API.Util
         public static readonly string CSHARP_NULL_TYPE_NAME = "System.Nullable`1";
 
         public static readonly string CSHARP = "csharp_";
+
+        public static readonly string OWNER_LOOKUP = "ownerlookup";
 
         static Constants()
         {
