@@ -153,7 +153,7 @@ namespace Com.Zoho.Crm.API
 
             public Builder ResourcePath(string resourcePath)
             {
-                if(!Directory.Exists(resourcePath))
+                if(resourcePath != null && !Directory.Exists(resourcePath))
                 {
                     throw new SDKException(errorMessage, Constants.RESOURCE_PATH_INVALID_ERROR_MESSAGE);
                 }
